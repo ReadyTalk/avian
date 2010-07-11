@@ -30,7 +30,7 @@ public abstract class ClassLoader {
   }
 
   public static ClassLoader getSystemClassLoader() {
-    return ClassLoader.class.getClassLoader();
+    return avian.SystemClassLoader.instance();
   }
 
   protected Class defineClass(String name, byte[] b, int offset, int length) {

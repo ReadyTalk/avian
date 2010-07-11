@@ -1,5 +1,4 @@
 THUNK(tryInitClass)
-THUNK(findInterfaceMethodFromInstance)
 THUNK(compareDoublesG)
 THUNK(compareDoublesL)
 THUNK(compareFloatsG)

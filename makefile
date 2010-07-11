@@ -326,7 +326,8 @@ vm-depends = \
 	$(src)/compiler.h \
 	$(src)/$(asm).h \
 	$(src)/heapwalk.h \
-	$(src)/bootimage.h
+	$(src)/bootimage.h \
+	$(src)/thunks.cpp
 
 vm-sources = \
 	$(src)/$(system).cpp \

@@ -333,17 +333,21 @@ object
 findInInterfaces(Thread* t, object class_, object name, object spec,
                  object (*find)(Thread*, object, object, object))
 {
-  object result = 0;
   if (classInterfaceTable(t, class_)) {
+    unsigned increment = (classFlags(t, class_) & ACC_INTERFACE) ? 1 : 2;
     for (unsigned i = 0;
-         i < arrayLength(t, classInterfaceTable(t, class_)) and result == 0;
-         i += 2)
+         i < arrayLength(t, classInterfaceTable(t, class_));
+         i += increment)
     {
-      result = find
+      object result = find
         (t, arrayBody(t, classInterfaceTable(t, class_), i), name, spec);
+
+      if (result) {
+        return result;
+      }
     }
   }
-  return result;
+  return 0;
 }
 
 void
@@ -913,10 +917,7 @@ addInterfaces(Thread* t, object class_, object map)
 {
   object table = classInterfaceTable(t, class_);
   if (table) {
-    unsigned increment = 2;
-    if (classFlags(t, class_) & ACC_INTERFACE) {
-      increment = 1;
-    }
+    unsigned increment = (classFlags(t, class_) & ACC_INTERFACE) ? 1 : 2;
 
     PROTECT(t, map);
     PROTECT(t, table);
@@ -1308,7 +1309,7 @@ addInterfaceMethods(Thread* t, object class_, object virtualMap,
                methodName(t, method),
                methodSpec(t, method),
                0,
-               class_,
+               methodClass(t, method),
                0,
                0);
 
@@ -1646,19 +1647,10 @@ updateClassTables(Thread* t, object newClass, object oldClass)
     }
   }
 
-  if (classFlags(t, newClass) & ACC_INTERFACE) {
-    object virtualTable = classVirtualTable(t, newClass);
-    if (virtualTable) {
-      for (unsigned i = 0; i < arrayLength(t, virtualTable); ++i) {
-        if (methodClass(t, arrayBody(t, virtualTable, i)) == oldClass) {
-          set(t, arrayBody(t, virtualTable, i), MethodClass, newClass);
-        }
-      }
-    }
-  } else {
-    object methodTable = classMethodTable(t, newClass);
-    if (methodTable) {
-      for (unsigned i = 0; i < arrayLength(t, methodTable); ++i) {
+  object methodTable = classMethodTable(t, newClass);
+  if (methodTable) {
+    for (unsigned i = 0; i < arrayLength(t, methodTable); ++i) {
+      if (methodClass(t, arrayBody(t, methodTable, i)) == oldClass) {
         set(t, arrayBody(t, methodTable, i), MethodClass, newClass);
       }
     }
@@ -1855,31 +1847,12 @@ bootClass(Thread* t, Machine::Type type, int superType, uint32_t objectMask,
 }
 
 void
-bootJavaClass(Thread* t, Machine::Type type, int superType, const char* name,
-              int vtableLength, object bootMethod)
+bootJavaClass(Thread* t, Machine::Type type, const char* name)
 {
-  PROTECT(t, bootMethod);
-
   object n = makeByteArray(t, name);
   object class_ = arrayBody(t, t->m->types, type);
 
   set(t, class_, ClassName, n);
-
-  object vtable;
-  if (vtableLength >= 0) {
-    PROTECT(t, class_);
-
-    vtable = makeArray(t, vtableLength);
-    for (int i = 0; i < vtableLength; ++ i) {
-      arrayBody(t, vtable, i) = bootMethod;
-    }
-  } else {
-    vtable = classVirtualTable(t, arrayBody(t, t->m->types, superType));
-  }
-
-  set(t, class_, ClassVirtualTable, vtable);
-
-  t->m->processor->initVtable(t, class_);
 
   hashMapInsert(t, t->m->bootstrapClassMap, n, class_, byteArrayHash);
 }
@@ -1979,14 +1952,7 @@ boot(Thread* t)
   m->stringMap = makeWeakHashMap(t, 0, 0);
   m->processor->boot(t, 0);
 
-  { object bootCode = makeCode(t, 0, 0, 0, 0, 0, 1);
-    codeBody(t, bootCode, 0) = impdep1;
-    object bootMethod = makeMethod
-      (t, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bootCode, 0);
-    PROTECT(t, bootMethod);
-
 #include "type-java-initializations.cpp"
-  }
 }
 
 class HeapClient: public Heap::Client {
@@ -2950,9 +2916,11 @@ findLoadedSystemClass(Thread* t, object spec)
 }
 
 object
-parseClass(Thread* t, object loader, const uint8_t* data, unsigned size)
+parseClass(Thread* t, object loader, const uint8_t* data, unsigned size,
+           object bootstrap)
 {
   PROTECT(t, loader);
+  PROTECT(t, bootstrap);
 
   class Client: public Stream::Client {
    public:
@@ -3028,33 +2996,41 @@ parseClass(Thread* t, object loader, const uint8_t* data, unsigned size)
   object vtable = classVirtualTable(t, class_);
   unsigned vtableLength = (vtable ? arrayLength(t, vtable) : 0);
 
-  object real = t->m->processor->makeClass
-    (t,
-     classFlags(t, class_),
-     classVmFlags(t, class_),
-     classFixedSize(t, class_),
-     classArrayElementSize(t, class_),
-     classArrayDimensions(t, class_),
-     classObjectMask(t, class_),
-     className(t, class_),
-     classSourceFile(t, class_),
-     classSuper(t, class_),
-     classInterfaceTable(t, class_),
-     classVirtualTable(t, class_),
-     classFieldTable(t, class_),
-     classMethodTable(t, class_),
-     classAddendum(t, class_),
-     classStaticTable(t, class_),
-     classLoader(t, class_),
-     vtableLength);
+  if (bootstrap) {
+    updateBootstrapClass(t, bootstrap, class_);
 
-  PROTECT(t, real);
+    t->m->processor->initVtable(t, bootstrap);
 
-  t->m->processor->initVtable(t, real);
+    return bootstrap;
+  } else {
+    object real = t->m->processor->makeClass
+      (t,
+       classFlags(t, class_),
+       classVmFlags(t, class_),
+       classFixedSize(t, class_),
+       classArrayElementSize(t, class_),
+       classArrayDimensions(t, class_),
+       classObjectMask(t, class_),
+       className(t, class_),
+       classSourceFile(t, class_),
+       classSuper(t, class_),
+       classInterfaceTable(t, class_),
+       classVirtualTable(t, class_),
+       classFieldTable(t, class_),
+       classMethodTable(t, class_),
+       classAddendum(t, class_),
+       classStaticTable(t, class_),
+       classLoader(t, class_),
+       vtableLength);
 
-  updateClassTables(t, real, class_);
+    PROTECT(t, real);
 
-  return real;
+    t->m->processor->initVtable(t, real);
+
+    updateClassTables(t, real, class_);
+
+    return real;
+  }
 }
 
 object
@@ -3088,26 +3064,15 @@ resolveSystemClass(Thread* t, object spec)
 
         // parse class file
         class_ = parseClass
-          (t, t->m->loader, region->start(), region->length());
+          (t, t->m->loader, region->start(), region->length(), hashMapFind
+           (t, t->m->bootstrapClassMap, spec, byteArrayHash,
+            byteArrayEqual));
         region->dispose();
 
-        if (LIKELY(t->exception == 0)) {
-          if (Verbose) {
-            fprintf(stderr, "done parsing %s: %p\n",
-                    &byteArrayBody(t, spec, 0),
-                    class_);
-          }
-
-          object bootstrapClass = hashMapFind
-            (t, t->m->bootstrapClassMap, spec, byteArrayHash,
-             byteArrayEqual);
-
-          if (bootstrapClass) {
-            PROTECT(t, bootstrapClass);
-              
-            updateBootstrapClass(t, bootstrapClass, class_);
-            class_ = bootstrapClass;
-          }
+        if (Verbose and LIKELY(t->exception == 0)) {
+          fprintf(stderr, "done parsing %s: %p\n",
+                  &byteArrayBody(t, spec, 0),
+                  class_);
         }
       }
     }
@@ -3419,11 +3384,11 @@ findInHierarchy(Thread* t, object class_, object name, object spec,
   object originalClass = class_;
 
   object o = 0;
-  if ((classFlags(t, class_) & ACC_INTERFACE)
-      and classVirtualTable(t, class_))
-  {
-    o = findInTable
-      (t, classVirtualTable(t, class_), name, spec, methodName, methodSpec);
+  if ((classFlags(t, class_) & ACC_INTERFACE) and find == findMethodInClass) {
+    o = find(t, class_, name, spec);
+    if (o == 0) {
+      o = findInInterfaces(t, originalClass, name, spec, find);
+    }
   }
 
   if (o == 0) {

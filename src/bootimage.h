@@ -43,6 +43,8 @@ class BootImage {
    public:
     Thunk default_;
     Thunk defaultVirtual;
+    Thunk defaultInterface;
+    Thunk invokeInterface;
     Thunk native;
     Thunk aioob;
     Thunk table;
@@ -71,6 +73,8 @@ class BootImage {
 
   unsigned compileMethodCall;
   unsigned compileVirtualMethodCall;
+  unsigned compileAndReplaceInterfaceMethodCall;
+  unsigned compileInterfaceMethodCall;
   unsigned invokeNativeCall;
   unsigned throwArrayIndexOutOfBoundsCall;
 

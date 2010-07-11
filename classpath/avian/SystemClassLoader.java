@@ -27,6 +27,8 @@ public class SystemClassLoader extends ClassLoader {
   public static native Class defineClass
     (ClassLoader loader, byte[] b, int offset, int length);
 
+  public static native SystemClassLoader instance();
+
   protected native Class findClass(String name) throws ClassNotFoundException;
 
   protected native Class reallyFindLoadedClass(String name);

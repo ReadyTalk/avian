@@ -183,6 +183,13 @@ Avian_avian_SystemClassLoader_releaseClassLock
 }
 
 extern "C" JNIEXPORT int64_t JNICALL
+Avian_avian_SystemClassLoader_instance
+(Thread* t, object, uintptr_t*)
+{
+  return reinterpret_cast<int64_t>(t->m->loader);
+}
+
+extern "C" JNIEXPORT int64_t JNICALL
 Avian_avian_SystemClassLoader_defineClass
 (Thread* t, object, uintptr_t* arguments)
 {
@@ -196,7 +203,7 @@ Avian_avian_SystemClassLoader_defineClass
   uint8_t* buffer = static_cast<uint8_t*>
     (t->m->heap->allocate(length));
   memcpy(buffer, &byteArrayBody(t, b, offset), length);
-  object c = parseClass(t, loader, buffer, length);
+  object c = parseClass(t, loader, buffer, length, 0);
   t->m->heap->free(buffer, length);
 
   if (c) {

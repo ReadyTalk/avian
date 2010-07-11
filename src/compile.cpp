@@ -55,6 +55,8 @@ const bool Continuations = true;
 const bool Continuations = false;
 #endif
 
+const unsigned InterfaceTableLength = 32;
+
 const unsigned MaxNativeCallFootprint = 4;
 
 const unsigned InitialZoneCapacityInBytes = 64 * 1024;
@@ -273,13 +275,7 @@ resolveTarget(MyThread* t, void* stack, object method)
 {
   object class_ = objectClass(t, resolveThisPointer(t, stack));
 
-  if (classVmFlags(t, class_) & BootstrapFlag) {
-    PROTECT(t, method);
-    PROTECT(t, class_);
-
-    resolveSystemClass(t, className(t, class_));
-    if (UNLIKELY(t->exception)) return 0;
-  }
+  assert(t, (classVmFlags(t, class_) & BootstrapFlag) == 0);
 
   if (classFlags(t, methodClass(t, method)) & ACC_INTERFACE) {
     return findInterfaceMethod(t, method, class_);
@@ -291,12 +287,7 @@ resolveTarget(MyThread* t, void* stack, object method)
 object
 resolveTarget(MyThread* t, object class_, unsigned index)
 {
-  if (classVmFlags(t, class_) & BootstrapFlag) {
-    PROTECT(t, class_);
-
-    resolveSystemClass(t, className(t, class_));
-    if (UNLIKELY(t->exception)) return 0;
-  }
+  assert(t, (classVmFlags(t, class_) & BootstrapFlag) == 0);
 
   return arrayBody(t, classVirtualTable(t, class_), index);
 }
@@ -2091,7 +2082,7 @@ bootNativeThunk(MyThread* t);
 uintptr_t
 aioobThunk(MyThread* t);
 
-uintptr_t
+void*
 virtualThunk(MyThread* t, unsigned index);
 
 bool
@@ -2120,32 +2111,6 @@ codeAllocator(MyThread* t);
 void
 compile(MyThread* t, Allocator* allocator, BootContext* bootContext,
         object method);
-
-int64_t
-findInterfaceMethodFromInstance(MyThread* t, object method, object instance)
-{
-  if (instance) {
-    object target = findInterfaceMethod(t, method, objectClass(t, instance));
-
-    if (unresolved(t, methodAddress(t, target))) {
-      PROTECT(t, target);
-
-      compile(t, codeAllocator(t), 0, target);
-    }
-
-    if (UNLIKELY(t->exception)) {
-      unwind(t);
-    } else {
-      if (methodFlags(t, target) & ACC_NATIVE) {
-        t->trace->nativeMethod = target;
-      }
-      return methodAddress(t, target);
-    }
-  } else {
-    t->exception = makeNullPointerException(t);
-    unwind(t);
-  }
-}
 
 int64_t
 compareDoublesG(uint64_t bi, uint64_t ai)
@@ -2870,6 +2835,37 @@ compileDirectInvoke(MyThread* t, Frame* frame, object target, bool tailCall)
   }
 
   return tailCall;
+}
+
+void
+compileVirtualInvoke(MyThread* t, Frame* frame, object target, unsigned offset,
+                     bool tailCall)
+{
+  Compiler* c = frame->c;
+
+  unsigned parameterFootprint = methodParameterFootprint(t, target);
+
+  Compiler::Operand* instance = c->peek(1, parameterFootprint - 1);
+
+  unsigned rSize = resultSize(t, methodReturnCode(t, target));
+
+  Compiler::Operand* result = c->stackCall
+    (c->memory
+     (c->and_
+      (BytesPerWord, c->constant(PointerMask, Compiler::IntegerType),
+       c->memory(instance, Compiler::ObjectType, 0, 0, 1)),
+      Compiler::ObjectType, offset, 0, 1),
+     tailCall ? Compiler::TailJump : 0,
+     frame->trace(0, 0),
+     rSize,
+     operandTypeForFieldCode(t, methodReturnCode(t, target)),
+     parameterFootprint);
+
+  frame->pop(parameterFootprint);
+
+  if (rSize) {
+    pushReturnValue(t, frame, methodReturnCode(t, target), result);
+  }
 }
 
 void
@@ -4103,34 +4099,25 @@ compile(MyThread* t, Frame* initialFrame, unsigned ip,
 
       assert(t, (methodFlags(t, target) & ACC_STATIC) == 0);
 
-      unsigned parameterFootprint = methodParameterFootprint(t, target);
+      bool tailCall = isTailCall(t, code, ip, context->method, target);
 
-      unsigned instance = parameterFootprint - 1;
+      unsigned offset = ClassVtable
+        + ((methodHash(t, target) & (InterfaceTableLength - 1))
+           * BytesPerWord);
 
-      unsigned rSize = resultSize(t, methodReturnCode(t, target));
+      // todo: consider storing this reference to a known register and
+      // letting the thunk move it to MyThread::virtualCallIndex if
+      // applicable.  The reference will be ignored in the fast path
+      // case (where no thunk is involved), so we should make it as
+      // inexpensive as possible.  Note that this will require adding
+      // methods to Compiler to allow locking a value into a register
+      // and later unlocking it.
+      c->store(BytesPerWord, frame->append(target),
+               BytesPerWord, c->memory
+               (c->register_(t->arch->thread()), Compiler::AddressType,
+                difference(&(t->virtualCallIndex), t)));
 
-      Compiler::Operand* result = c->stackCall
-        (c->call
-         (c->constant
-          (getThunk(t, findInterfaceMethodFromInstanceThunk),
-           Compiler::AddressType),
-          0,
-          frame->trace(0, 0),
-          BytesPerWord,
-          Compiler::AddressType,
-          3, c->register_(t->arch->thread()), frame->append(target),
-          c->peek(1, instance)),
-         0,
-         frame->trace(0, 0),
-         rSize,
-         operandTypeForFieldCode(t, methodReturnCode(t, target)),
-         parameterFootprint);
-
-      frame->pop(parameterFootprint);
-
-      if (rSize) {
-        pushReturnValue(t, frame, methodReturnCode(t, target), result);
-      }
+      compileVirtualInvoke(t, frame, target, offset, tailCall);
     } break;
 
     case invokespecial: {
@@ -4172,33 +4159,12 @@ compile(MyThread* t, Frame* initialFrame, unsigned ip,
 
       assert(t, (methodFlags(t, target) & ACC_STATIC) == 0);
 
-      unsigned parameterFootprint = methodParameterFootprint(t, target);
-
-      unsigned offset = ClassVtable + (methodOffset(t, target) * BytesPerWord);
-
-      Compiler::Operand* instance = c->peek(1, parameterFootprint - 1);
-
-      unsigned rSize = resultSize(t, methodReturnCode(t, target));
-
       bool tailCall = isTailCall(t, code, ip, context->method, target);
 
-      Compiler::Operand* result = c->stackCall
-        (c->memory
-         (c->and_
-          (BytesPerWord, c->constant(PointerMask, Compiler::IntegerType),
-           c->memory(instance, Compiler::ObjectType, 0, 0, 1)),
-          Compiler::ObjectType, offset, 0, 1),
-         tailCall ? Compiler::TailJump : 0,
-         frame->trace(0, 0),
-         rSize,
-         operandTypeForFieldCode(t, methodReturnCode(t, target)),
-         parameterFootprint);
+      unsigned offset = ClassVtable
+        + ((InterfaceTableLength + methodOffset(t, target)) * BytesPerWord);
 
-      frame->pop(parameterFootprint);
-
-      if (rSize) {
-        pushReturnValue(t, frame, methodReturnCode(t, target), result);
-      }
+      compileVirtualInvoke(t, frame, target, offset, tailCall);
     } break;
 
     case ior: {
@@ -6058,19 +6024,11 @@ compileMethod(MyThread* t)
 void*
 compileVirtualMethod2(MyThread* t, object class_, unsigned index)
 {
-  // If class_ has BootstrapFlag set, that means its vtable is not yet
-  // available.  However, we must set t->trace->targetMethod to an
-  // appropriate method to ensure we can accurately scan the stack for
-  // GC roots.  We find such a method by looking for a superclass with
-  // a vtable and using it instead:
-
-  object c = class_;
-  while (classVmFlags(t, c) & BootstrapFlag) {
-    c = classSuper(t, c);
-  }
-  t->trace->targetMethod = arrayBody(t, classVirtualTable(t, c), index);
-
   PROTECT(t, class_);
+
+  assert(t, (classVmFlags(t, class_) & BootstrapFlag) == 0);
+
+  t->trace->targetMethod = arrayBody(t, classVirtualTable(t, class_), index);
 
   object target = resolveTarget(t, class_, index);
   PROTECT(t, target);
@@ -6088,7 +6046,8 @@ compileVirtualMethod2(MyThread* t, object class_, unsigned index)
     if (methodFlags(t, target) & ACC_NATIVE) {
       t->trace->nativeMethod = target;
     } else {
-      classVtable(t, class_, methodOffset(t, target)) = address;
+      classVtable(t, class_, InterfaceTableLength + methodOffset(t, target))
+        = address;
     }
     return address;
   }
@@ -6110,6 +6069,71 @@ compileVirtualMethod(MyThread* t)
   } else {
     return reinterpret_cast<uintptr_t>(r);
   }
+}
+
+void*
+compileInterfaceMethod3(MyThread* t, object class_, object method,
+                        bool replace)
+{
+  PROTECT(t, class_);
+  PROTECT(t, method);
+
+  assert(t, (classVmFlags(t, class_) & BootstrapFlag) == 0);
+
+  t->trace->targetMethod = method;
+
+  object target = findInterfaceMethod(t, method, class_);
+  PROTECT(t, target);
+
+  if (LIKELY(t->exception == 0)) {
+    compile(t, codeAllocator(t), 0, target);
+  }
+
+  t->trace->targetMethod = 0;
+
+  if (UNLIKELY(t->exception)) {
+    return 0;
+  } else {
+    void* address = reinterpret_cast<void*>(methodAddress(t, target));
+    if (methodFlags(t, target) & ACC_NATIVE) {
+      t->trace->nativeMethod = target;
+    } else if (replace) {
+      classVtable
+        (t, class_, methodHash(t, method) & (InterfaceTableLength - 1))
+        = address;
+    }
+    return address;
+  }
+}
+
+uint64_t
+compileInterfaceMethod2(MyThread* t, bool replace)
+{
+  object class_ = objectClass(t, static_cast<object>(t->virtualCallTarget));
+  t->virtualCallTarget = 0;
+
+  object target = reinterpret_cast<object>(t->virtualCallIndex);
+  t->virtualCallIndex = 0;
+
+  void* r = compileInterfaceMethod3(t, class_, target, replace);
+
+  if (UNLIKELY(t->exception)) {
+    unwind(t);
+  } else {
+    return reinterpret_cast<uintptr_t>(r);
+  }
+}
+
+uint64_t
+compileAndReplaceInterfaceMethod(MyThread* t)
+{
+  return compileInterfaceMethod2(t, true);
+}
+
+uint64_t
+compileInterfaceMethod(MyThread* t)
+{
+  return compileInterfaceMethod2(t, false);
 }
 
 void
@@ -7232,6 +7256,8 @@ class MyProcessor: public Processor {
    public:
     Thunk default_;
     Thunk defaultVirtual;
+    Thunk defaultInterface;
+    Thunk invokeInterface;
     Thunk native;
     Thunk aioob;
     Thunk table;
@@ -7318,17 +7344,72 @@ class MyProcessor: public Processor {
     return vm::makeClass
       (t, flags, vmFlags, fixedSize, arrayElementSize, arrayDimensions,
        objectMask, name, sourceFile, super, interfaceTable, virtualTable,
-       fieldTable, methodTable, staticTable, addendum, loader, vtableLength);
+       fieldTable, methodTable, staticTable, addendum, loader,
+       (flags & ACC_INTERFACE) ? 0 : InterfaceTableLength + vtableLength);
   }
 
   virtual void
   initVtable(Thread* t, object c)
   {
     PROTECT(t, c);
-    for (int i = classLength(t, c) - 1; i >= 0; --i) {
-      void* thunk = reinterpret_cast<void*>
-        (virtualThunk(static_cast<MyThread*>(t), i));
-      classVtable(t, c, i) = thunk;
+
+    if ((classFlags(t, c) & ACC_INTERFACE) == 0) {
+      object itable = classInterfaceTable(t, c);
+      if (itable) {
+        PROTECT(t, itable);
+
+        object table[InterfaceTableLength];
+        memset(table, 0, InterfaceTableLength * BytesPerWord);
+        Thread::ArrayProtector tableProtector(t, table, InterfaceTableLength);
+
+        object interface = 0;
+        PROTECT(t, interface);
+
+        object methodTable = 0;
+        PROTECT(t, methodTable);
+
+        for (unsigned i = 0; i < arrayLength(t, itable); i += 2) {
+          interface = arrayBody(t, itable, i);
+          methodTable = classMethodTable(t, interface);
+          if (methodTable) {
+            for (unsigned j = 0; j < arrayLength(t, methodTable); ++j) {
+              object method = arrayBody(t, methodTable, j);
+              if (methodVirtual(t, method)) {
+                unsigned h = methodHash(t, method)
+                  & (InterfaceTableLength - 1);
+
+                bool unique;
+                if (table[h]) {
+                  unique = methodEqual(t, table[h], method);
+                } else {
+                  unique = true;
+                  table[h] = method;
+                }
+
+                classVtable(t, c, h) = unique
+                  ? thunks.defaultInterface.start
+                  : thunks.invokeInterface.start;
+
+                // fprintf(stderr,
+                //         "interface thunk %p at %d (0x%x) for %s.%s%s "
+                //         "unique %d\n",
+                //         classVtable(t, c, h),
+                //         h,
+                //         ClassVtable + (h * BytesPerWord),
+                //         &byteArrayBody(t, className(t, c), 0),
+                //         &byteArrayBody(t, methodName(t, method), 0),
+                //         &byteArrayBody(t, methodSpec(t, method), 0),
+                //         unique);
+              }
+            }
+          }
+        }
+      }
+
+      for (int i = classLength(t, c) - InterfaceTableLength - 1; i >= 0; --i) {
+        void* thunk = virtualThunk(static_cast<MyThread*>(t), i);
+        classVtable(t, c, InterfaceTableLength + i) = thunk;
+      }
     }
   }
 
@@ -8254,6 +8335,54 @@ thunkToThunk(const MyProcessor::Thunk& thunk, uint8_t* base)
 }
 
 void
+compileVirtualCallThunk(MyThread* t, Assembler* a, Promise* promise,
+                        MyProcessor::Thunk* thunk, bool storeIndex)
+{
+  Assembler::Register class_(t->arch->virtualCallTarget());
+  Assembler::Memory virtualCallTargetSrc
+    (t->arch->stack(),
+     (t->arch->frameFooterSize() + t->arch->frameReturnAddressSize())
+     * BytesPerWord);
+
+  a->apply(Move, BytesPerWord, MemoryOperand, &virtualCallTargetSrc,
+           BytesPerWord, RegisterOperand, &class_);
+
+  Assembler::Memory virtualCallTargetDst
+    (t->arch->thread(), difference(&(t->virtualCallTarget), t));
+
+  a->apply(Move, BytesPerWord, RegisterOperand, &class_,
+           BytesPerWord, MemoryOperand, &virtualCallTargetDst);
+
+  if (storeIndex) {
+    Assembler::Register index(t->arch->virtualCallIndex());
+    Assembler::Memory virtualCallIndex
+      (t->arch->thread(), difference(&(t->virtualCallIndex), t));
+    
+    a->apply(Move, BytesPerWord, RegisterOperand, &index,
+             BytesPerWord, MemoryOperand, &virtualCallIndex);
+  }
+    
+  a->saveFrame(difference(&(t->stack), t), difference(&(t->base), t));
+
+  thunk->frameSavedOffset = a->length();
+
+  Assembler::Register thread(t->arch->thread());
+  a->pushFrame(1, BytesPerWord, RegisterOperand, &thread);
+  
+  Assembler::Constant proc(promise);
+  a->apply(LongCall, BytesPerWord, ConstantOperand, &proc);
+
+  a->popFrame();
+
+  Assembler::Register result(t->arch->returnLow());
+  a->apply(Jump, BytesPerWord, RegisterOperand, &result);
+
+  a->endBlock(false)->resolve(0, 0);
+
+  thunk->length = a->length();
+}
+
+void
 compileThunks(MyThread* t, Allocator* allocator, MyProcessor* p)
 {
   class ThunkContext {
@@ -8294,49 +8423,21 @@ compileThunks(MyThread* t, Allocator* allocator, MyProcessor* p)
 
   ThunkContext defaultVirtualContext(t, &zone);
 
-  { Assembler* a = defaultVirtualContext.context.assembler;
+  compileVirtualCallThunk
+    (t, defaultVirtualContext.context.assembler,
+     &(defaultVirtualContext.promise), &(p->thunks.defaultVirtual), true);
 
-    Assembler::Register class_(t->arch->virtualCallTarget());
-    Assembler::Memory virtualCallTargetSrc
-      (t->arch->stack(),
-       (t->arch->frameFooterSize() + t->arch->frameReturnAddressSize())
-       * BytesPerWord);
+  ThunkContext defaultInterfaceContext(t, &zone);
 
-    a->apply(Move, BytesPerWord, MemoryOperand, &virtualCallTargetSrc,
-             BytesPerWord, RegisterOperand, &class_);
+  compileVirtualCallThunk
+    (t, defaultInterfaceContext.context.assembler,
+     &(defaultInterfaceContext.promise), &(p->thunks.defaultInterface), false);
 
-    Assembler::Memory virtualCallTargetDst
-      (t->arch->thread(), difference(&(t->virtualCallTarget), t));
+  ThunkContext invokeInterfaceContext(t, &zone);
 
-    a->apply(Move, BytesPerWord, RegisterOperand, &class_,
-             BytesPerWord, MemoryOperand, &virtualCallTargetDst);
-
-    Assembler::Register index(t->arch->virtualCallIndex());
-    Assembler::Memory virtualCallIndex
-      (t->arch->thread(), difference(&(t->virtualCallIndex), t));
-
-    a->apply(Move, BytesPerWord, RegisterOperand, &index,
-             BytesPerWord, MemoryOperand, &virtualCallIndex);
-    
-    a->saveFrame(difference(&(t->stack), t), difference(&(t->base), t));
-
-    p->thunks.defaultVirtual.frameSavedOffset = a->length();
-
-    Assembler::Register thread(t->arch->thread());
-    a->pushFrame(1, BytesPerWord, RegisterOperand, &thread);
-  
-    Assembler::Constant proc(&(defaultVirtualContext.promise));
-    a->apply(LongCall, BytesPerWord, ConstantOperand, &proc);
-
-    a->popFrame();
-
-    Assembler::Register result(t->arch->returnLow());
-    a->apply(Jump, BytesPerWord, RegisterOperand, &result);
-
-    a->endBlock(false)->resolve(0, 0);
-
-    p->thunks.defaultVirtual.length = a->length();
-  }
+  compileVirtualCallThunk
+    (t, invokeInterfaceContext.context.assembler,
+     &(invokeInterfaceContext.promise), &(p->thunks.invokeInterface), false);
 
   ThunkContext nativeContext(t, &zone);
 
@@ -8422,6 +8523,35 @@ compileThunks(MyThread* t, Allocator* allocator, MyProcessor* p)
     }
   }
 
+  p->thunks.defaultInterface.start = finish
+    (t, allocator, defaultInterfaceContext.context.assembler,
+     "defaultInterface");
+
+  { void* call;
+    defaultInterfaceContext.promise.listener->resolve
+      (reinterpret_cast<intptr_t>
+       (voidPointer(compileAndReplaceInterfaceMethod)), &call);
+
+    if (image) {
+      image->compileInterfaceMethodCall
+        = static_cast<uint8_t*>(call) - imageBase;
+    }
+  }
+
+  p->thunks.invokeInterface.start = finish
+    (t, allocator, invokeInterfaceContext.context.assembler,
+     "invokeInterface");
+
+  { void* call;
+    invokeInterfaceContext.promise.listener->resolve
+      (reinterpret_cast<intptr_t>(voidPointer(compileInterfaceMethod)), &call);
+
+    if (image) {
+      image->compileInterfaceMethodCall
+        = static_cast<uint8_t*>(call) - imageBase;
+    }
+  }
+
   p->thunks.native.start = finish
     (t, allocator, nativeContext.context.assembler, "native");
 
@@ -8455,6 +8585,10 @@ compileThunks(MyThread* t, Allocator* allocator, MyProcessor* p)
     image->thunks.default_ = thunkToThunk(p->thunks.default_, imageBase);
     image->thunks.defaultVirtual
       = thunkToThunk(p->thunks.defaultVirtual, imageBase);
+    image->thunks.defaultInterface
+      = thunkToThunk(p->thunks.defaultInterface, imageBase);
+    image->thunks.invokeInterface
+      = thunkToThunk(p->thunks.invokeInterface, imageBase);
     image->thunks.native = thunkToThunk(p->thunks.native, imageBase);
     image->thunks.aioob = thunkToThunk(p->thunks.aioob, imageBase);
     image->thunks.table = thunkToThunk(p->thunks.table, imageBase);
@@ -8579,12 +8713,15 @@ compileVirtualThunk(MyThread* t, unsigned index, unsigned* size)
 
   a->writeTo(start);
 
-  logCompile(t, start, *size, 0, "virtualThunk", 0);
+  const unsigned BufferSize = 32;
+  char buffer[BufferSize];
+  vm::snprintf(buffer, BufferSize, "%d", index);
+  logCompile(t, start, *size, "<virtual thunk>", buffer, 0);
 
   return reinterpret_cast<uintptr_t>(start);
 }
 
-uintptr_t
+void*
 virtualThunk(MyThread* t, unsigned index)
 {
   MyProcessor* p = processor(t);
@@ -8602,17 +8739,14 @@ virtualThunk(MyThread* t, unsigned index)
   }
 
   if (wordArrayBody(t, p->virtualThunks, index * 2) == 0) {
-    ACQUIRE(t, t->m->classLock);
-
-    if (wordArrayBody(t, p->virtualThunks, index * 2) == 0) {
-      unsigned size;
-      uintptr_t thunk = compileVirtualThunk(t, index, &size);
-      wordArrayBody(t, p->virtualThunks, index * 2) = thunk;
-      wordArrayBody(t, p->virtualThunks, (index * 2) + 1) = size;
-    }
+    unsigned size;
+    uintptr_t thunk = compileVirtualThunk(t, index, &size);
+    wordArrayBody(t, p->virtualThunks, index * 2) = thunk;
+    wordArrayBody(t, p->virtualThunks, (index * 2) + 1) = size;
   }
 
-  return wordArrayBody(t, p->virtualThunks, index * 2);
+  return reinterpret_cast<void*>
+    (wordArrayBody(t, p->virtualThunks, index * 2));
 }
 
 void
@@ -8675,7 +8809,8 @@ compile(MyThread* t, Allocator* allocator, BootContext* bootContext,
       methodCompiled(t, method) = reinterpret_cast<intptr_t>(compiled);
 
       if (methodVirtual(t, method)) {
-        classVtable(t, methodClass(t, method), methodOffset(t, method))
+        classVtable(t, methodClass(t, method),
+                    InterfaceTableLength + methodOffset(t, method))
           = compiled;
       }
 

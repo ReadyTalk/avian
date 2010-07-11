@@ -1285,6 +1285,21 @@ class Thread {
     object* p;
   };
 
+  class ArrayProtector: public Protector {
+   public:
+    ArrayProtector(Thread* t, object* array, unsigned count):
+      Protector(t), array(array), count(count) { }
+
+    virtual void visit(Heap::Visitor* v) {
+      for (unsigned i = 0; i < count; ++i) {
+        v->visit(array + i);
+      }
+    }
+
+    object* array;
+    unsigned count;
+  };
+
   class ClassInitStack {
    public:
     ClassInitStack(Thread* t, object class_):
@@ -2154,7 +2169,8 @@ emptyMethod(Thread* t, object method)
 }
 
 object
-parseClass(Thread* t, object loader, const uint8_t* data, unsigned length);
+parseClass(Thread* t, object loader, const uint8_t* data, unsigned length,
+           object bootstrap);
 
 object
 resolveClass(Thread* t, object loader, object name);
@@ -2944,8 +2960,7 @@ resolve(Thread* t, object loader, object method, unsigned index,
         object (*makeError)(vm::Thread*, object))
 {
   object o = singletonObject(t, codePool(t, methodCode(t, method)), index);
-  if (objectClass(t, o) == arrayBody(t, t->m->types, Machine::ReferenceType))
-  {
+  if (objectClass(t, o) == arrayBody(t, t->m->types, Machine::ReferenceType)) {
     PROTECT(t, method);
 
     object reference = o;

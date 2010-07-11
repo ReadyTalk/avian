@@ -2151,26 +2151,9 @@ writeJavaInitialization(Output* out, Object* type)
 {
   out->write("bootJavaClass(t, Machine::");
   out->write(capitalize(typeName(type)));
-  out->write("Type, ");
-
-  if (typeSuper(type)) {
-    out->write("Machine::");
-    out->write(capitalize(typeName(typeSuper(type))));
-    out->write("Type");
-  } else {
-    out->write("-1");   
-  }
-  out->write(", \"");
-
+  out->write("Type, \"");
   out->write(typeJavaName(type));
-  out->write("\", ");
-
-  if (typeOverridesMethods(type)) {
-    out->write(methodCount(type));
-  } else {
-    out->write("-1");
-  }
-  out->write(", bootMethod);\n");
+  out->write("\");\n");
 }
 
 void

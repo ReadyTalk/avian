@@ -157,7 +157,7 @@ public final class Class <T>
     throws ClassNotFoundException
   {
     if (loader == null) {
-      loader = Class.class.loader;
+      loader = Class.class.getClassLoader();
     }
     Class c = loader.loadClass(name);
     avian.SystemClassLoader.link(c, loader);
@@ -509,6 +509,10 @@ public final class Class <T>
   }
 
   public ClassLoader getClassLoader() {
+    // force the system classloader to load to ensure its vtable is
+    // initialized:
+    avian.SystemClassLoader.instance();
+
     return loader;
   }
 
@@ -600,7 +604,7 @@ public final class Class <T>
   private Annotation getAnnotation(Object[] a) {
     if (a[0] == null) {
       a[0] = Proxy.newProxyInstance
-        (loader, new Class[] { (Class) a[1] },
+        (getClassLoader(), new Class[] { (Class) a[1] },
          new AnnotationInvocationHandler(a));
     }
     return (Annotation) a[0];

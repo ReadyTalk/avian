@@ -2793,31 +2793,6 @@ interpret(Thread* t)
 
   case wide: goto wide;
 
-  case impdep1: {
-    // this means we're invoking a virtual method on an instance of a
-    // bootstrap class, so we need to load the real class to get the
-    // real method and call it.
-
-    assert(t, frameNext(t, frame) >= base);
-    popFrame(t);
-
-    assert(t, codeBody(t, code, ip - 3) == invokevirtual);
-    ip -= 2;
-
-    uint16_t index = codeReadInt16(t, code, ip);
-    object method = resolveMethod(t, frameMethod(t, frame), index - 1);
-
-    unsigned parameterFootprint = methodParameterFootprint(t, method);
-    object class_ = objectClass(t, peekObject(t, sp - parameterFootprint));
-    assert(t, classVmFlags(t, class_) & BootstrapFlag);
-    
-    resolveClass(t, classLoader(t, methodClass(t, frameMethod(t, frame))),
-                 className(t, class_));
-    if (UNLIKELY(exception)) goto throw_;
-
-    ip -= 3;
-  } goto loop;
-
   default: abort(t);
   }
 
@@ -2979,9 +2954,7 @@ invoke(Thread* t, object method)
     unsigned parameterFootprint = methodParameterFootprint(t, method);
     class_ = objectClass(t, peekObject(t, t->sp - parameterFootprint));
 
-    if (classVmFlags(t, class_) & BootstrapFlag) {
-      resolveClass(t, t->m->loader, className(t, class_));
-    }
+    assert(t, (classVmFlags(t, class_) & BootstrapFlag) == 0);
 
     if (classFlags(t, methodClass(t, method)) & ACC_INTERFACE) {
       method = findInterfaceMethod(t, method, class_);
