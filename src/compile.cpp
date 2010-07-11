@@ -7773,6 +7773,8 @@ class MyProcessor: public Processor {
       codeAllocator.capacity = ExecutableAreaSizeInBytes;
     }
 
+    local::compileThunks(static_cast<MyThread*>(t), &codeAllocator, this);
+
     if (image) {
       local::boot(static_cast<MyThread*>(t), image);
     } else {
@@ -7782,8 +7784,6 @@ class MyProcessor: public Processor {
       set(t, methodTree, TreeNodeLeft, methodTreeSentinal);
       set(t, methodTree, TreeNodeRight, methodTreeSentinal);
     }
-
-    local::compileThunks(static_cast<MyThread*>(t), &codeAllocator, this);
 
     segFaultHandler.m = t->m;
     expect(t, t->m->system->success
