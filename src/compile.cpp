@@ -2839,7 +2839,7 @@ compileDirectInvoke(MyThread* t, Frame* frame, object target, bool tailCall)
 
 void
 compileVirtualInvoke(MyThread* t, Frame* frame, object target, unsigned offset,
-                     bool tailCall)
+                     bool tailCall, bool traceTarget)
 {
   Compiler* c = frame->c;
 
@@ -2856,7 +2856,7 @@ compileVirtualInvoke(MyThread* t, Frame* frame, object target, unsigned offset,
        c->memory(instance, Compiler::ObjectType, 0, 0, 1)),
       Compiler::ObjectType, offset, 0, 1),
      tailCall ? Compiler::TailJump : 0,
-     frame->trace(0, 0),
+     frame->trace(traceTarget ? target : 0, 0),
      rSize,
      operandTypeForFieldCode(t, methodReturnCode(t, target)),
      parameterFootprint);
@@ -4105,19 +4105,21 @@ compile(MyThread* t, Frame* initialFrame, unsigned ip,
         + ((methodHash(t, target) & (InterfaceTableLength - 1))
            * BytesPerWord);
 
-      // todo: consider storing this reference to a known register and
-      // letting the thunk move it to MyThread::virtualCallIndex if
-      // applicable.  The reference will be ignored in the fast path
-      // case (where no thunk is involved), so we should make it as
-      // inexpensive as possible.  Note that this will require adding
-      // methods to Compiler to allow locking a value into a register
-      // and later unlocking it.
-      c->store(BytesPerWord, frame->append(target),
-               BytesPerWord, c->memory
-               (c->register_(t->arch->thread()), Compiler::AddressType,
-                difference(&(t->virtualCallIndex), t)));
+      if (TailCalls) {
+        // todo: consider storing this reference to a known register
+        // and letting the thunk move it to MyThread::virtualCallIndex
+        // if applicable.  The reference will be ignored in the fast
+        // path case (where no thunk is involved), so we should make
+        // it as inexpensive as possible.  Note that this will require
+        // adding methods to Compiler to allow locking a value into a
+        // register and later unlocking it.
+        c->store(BytesPerWord, frame->append(target),
+                 BytesPerWord, c->memory
+                 (c->register_(t->arch->thread()), Compiler::AddressType,
+                  difference(&(t->virtualCallIndex), t)));
+      }
 
-      compileVirtualInvoke(t, frame, target, offset, tailCall);
+      compileVirtualInvoke(t, frame, target, offset, tailCall, not TailCalls);
     } break;
 
     case invokespecial: {
@@ -4164,7 +4166,7 @@ compile(MyThread* t, Frame* initialFrame, unsigned ip,
       unsigned offset = ClassVtable
         + ((InterfaceTableLength + methodOffset(t, target)) * BytesPerWord);
 
-      compileVirtualInvoke(t, frame, target, offset, tailCall);
+      compileVirtualInvoke(t, frame, target, offset, tailCall, false);
     } break;
 
     case ior: {
@@ -6112,8 +6114,13 @@ compileInterfaceMethod2(MyThread* t, bool replace)
   object class_ = objectClass(t, static_cast<object>(t->virtualCallTarget));
   t->virtualCallTarget = 0;
 
-  object target = reinterpret_cast<object>(t->virtualCallIndex);
-  t->virtualCallIndex = 0;
+  object target;
+  if (TailCalls) {
+    target = reinterpret_cast<object>(t->virtualCallIndex);
+    t->virtualCallIndex = 0;
+  } else {
+    target = callNodeTarget(t, findCallNode(t, t->arch->frameIp(t->stack)));
+  }
 
   void* r = compileInterfaceMethod3(t, class_, target, replace);
 
