@@ -74,4 +74,9 @@ public final class Byte extends Number implements Comparable<Byte> {
   public double doubleValue() {
     return (double) value;
   }
+
+  public static Byte valueOf(String s)
+        throws NumberFormatException {
+        return new Byte(parseByte(s));
+    }
 }

@@ -71,4 +71,13 @@ public final class Short extends Number implements Comparable<Short> {
   public double doubleValue() {
     return (double) value;
   }
+
+   public static Short valueOf(String s)
+        throws NumberFormatException {
+        return new Short(parseShort(s));
+    }
+
+    public static short parseShort(String s) {
+    return (short) Integer.parseInt(s);
+  }
 }
