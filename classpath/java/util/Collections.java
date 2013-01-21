@@ -559,4 +559,12 @@ public class Collections {
       return - cmp.compare(o1, o2);
     }
   }
+
+  public static <T> void sort(List<T> list, Comparator<? super T> c) {
+        Object[] a = list.toArray();
+        Arrays.sort(a, (Comparator)c);
+        for (int j=0; j<a.length; j++) {
+            list.set(j, (T)a[j]);
+        }
+    }
 }
