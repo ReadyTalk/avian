@@ -203,4 +203,112 @@ public class Arrays {
     }
   }
 
+  public static void sort(int[] numbers) {
+    // Check for empty or null array
+    if (numbers ==null || numbers.length==0){
+      return;
+    }
+    quicksort(numbers, 0, numbers.length - 1);
+  }
+
+  private static void quicksort(int[] numbers, int low, int high) {
+    int i = low, j = high;
+    // Get the pivot element from the middle of the list
+    int pivot = numbers[low + (high-low)/2];
+
+    // Divide into two lists
+    while (i <= j) {
+      // If the current value from the left list is smaller then the pivot
+      // element then get the next element from the left list
+      while (numbers[i] < pivot) {
+        i++;
+      }
+      // If the current value from the right list is larger then the pivot
+      // element then get the next element from the right list
+      while (numbers[j] > pivot) {
+        j--;
+      }
+
+      // If we have found a values in the left list which is larger then
+      // the pivot element and if we have found a value in the right list
+      // which is smaller then the pivot element then we exchange the
+      // values.
+      // As we are done we can increase i and j
+      if (i <= j) {
+        exchange(numbers, i, j);
+        i++;
+        j--;
+      }
+    }
+    // Recursion
+    if (low < j)
+      quicksort(numbers, low, j);
+    if (i < high)
+      quicksort(numbers,i, high);
+  }
+
+  private static void exchange(int[] numbers, int i, int j) {
+    int temp = numbers[i];
+    numbers[i] = numbers[j];
+    numbers[j] = temp;
+ } 
+
+  private static void checkBinarySearchBounds(int startIndex, int endIndex, int length) {
+        if (startIndex > endIndex) {
+            throw new IllegalArgumentException();
+        }
+        if (startIndex < 0 || endIndex > length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+    }
+
+  /**
+   * Performs a binary search for {@code value} in the ascending sorted array {@code array}.
+   * Searching in an unsorted array has an undefined result. It's also undefined which element
+   * is found if there are multiple occurrences of the same element.
+   *
+   * @param array the sorted array to search.
+   * @param value the element to find.
+   * @return the non-negative index of the element, or a negative index which
+   *         is {@code -index - 1} where the element would be inserted.
+   */
+  public static int binarySearch(int[] array, int value) {
+      return binarySearch(array, 0, array.length, value);
+  }
+
+  /**
+     * Performs a binary search for {@code value} in the ascending sorted array {@code array},
+     * in the range specified by fromIndex (inclusive) and toIndex (exclusive).
+     * Searching in an unsorted array has an undefined result. It's also undefined which element
+     * is found if there are multiple occurrences of the same element.
+     *
+     * @param array the sorted array to search.
+     * @param startIndex the inclusive start index.
+     * @param endIndex the exclusive start index.
+     * @param value the element to find.
+     * @return the non-negative index of the element, or a negative index which
+     *         is {@code -index - 1} where the element would be inserted.
+     * @throws IllegalArgumentException if {@code startIndex > endIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code startIndex < 0 || endIndex > array.length}
+     * @since 1.6
+     */
+    public static int binarySearch(int[] array, int startIndex, int endIndex, int value) {
+        checkBinarySearchBounds(startIndex, endIndex, array.length);
+        int lo = startIndex;
+        int hi = endIndex - 1;
+
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            int midVal = array[mid];
+
+            if (midVal < value) {
+                lo = mid + 1;
+            } else if (midVal > value) {
+                hi = mid - 1;
+            } else {
+                return mid;  // value found
+            }
+        }
+        return ~lo;  // value not present
+    }
 }
