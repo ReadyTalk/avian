@@ -13,27 +13,6 @@ package java.util;
 public class Arrays {
   private Arrays() { }
 
-  public static String toString(Object[] a) {
-    return asList(a).toString();
-  }
-
-  public static String toString(byte[] a) {
-    if (a == null) {
-      return "null";
-    } else {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
-      for (int i = 0; i < a.length; ++i) {
-        sb.append(String.valueOf(a[i]));
-        if (i + 1 != a.length) {
-          sb.append(", ");
-        }
-      }
-      sb.append("]");
-      return sb.toString();
-    }
-  }
-
   private static boolean equal(Object a, Object b) {
     return (a == null && b == null) || (a != null && a.equals(b));
   }
@@ -342,7 +321,7 @@ public class Arrays {
         return ~lo;  // value not present
     }
 
-    
+
     /**
      * Creates a {@code String} representation of the {@code boolean[]} passed.
      * The result is surrounded by brackets ({@code "[]"}), each
