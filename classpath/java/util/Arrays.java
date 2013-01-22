@@ -191,6 +191,30 @@ public class Arrays {
     }
   }
 
+  public static void fill(byte[] array, byte value) {
+    for (int i = 0; i < array.length; i++) {
+       array[i] = value;
+    }
+  }
+
+  public static void fill(byte[] array, int start, int end, byte value) {
+    for (int i = start; i < end; i++) {
+      array[i] = value;
+    }
+  }
+
+  public static void fill(long[] array, long value) {
+    for (int i = 0; i < array.length; i++) {
+       array[i] = value;
+    }
+  }
+
+  public static void fill(long[] array, int start, int end, long value) {
+    for (int i = start; i < end; i++) {
+      array[i] = value;
+    }
+  }
+
   public static void fill(char[] array, char value) {
     for (int i=0;i<array.length;i++) {
       array[i] = value;
@@ -199,6 +223,12 @@ public class Arrays {
   
   public static <T> void fill(T[] array, T value) {
     for (int i=0;i<array.length;i++) {
+      array[i] = value;
+    }
+  }
+
+  public static <T> void fill(T[] array, int start, int end, T value) {
+    for (int i = start; i < end; i++) {
       array[i] = value;
     }
   }
