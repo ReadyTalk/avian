@@ -809,6 +809,12 @@ Java_java_lang_Math_atan(JNIEnv*, jclass, jdouble val)
   return atan(val);
 }
 
+extern "C" JNIEXPORT jdouble JNICALL
+Java_java_lang_Math_atan2(JNIEnv*, jclass, jdouble y, jdouble x)
+{
+  return atan2(y, x);
+}
+
 
 extern "C" JNIEXPORT jdouble JNICALL
 Java_java_lang_Math_sinh(JNIEnv*, jclass, jdouble val)

@@ -616,4 +616,36 @@ public class Collections {
         }
         return -(low + 1);  // key not found
     }
+
+    private static final int REVERSE_THRESHOLD        =   18;
+    /**
+     * Reverses the order of the elements in the specified list.<p>
+     *
+     * This method runs in linear time.
+     *
+     * @param  list the list whose elements are to be reversed.
+     * @throws UnsupportedOperationException if the specified list or
+     *         its list-iterator does not support the <tt>set</tt> operation.
+     */
+    public static void reverse(List<?> list) {
+        int size = list.size();
+        // Could be very inefficient
+        //if (size < REVERSE_THRESHOLD || list instanceof RandomAccess) {
+            for (int i=0, mid=size>>1, j=size-1; i<mid; i++, j--)
+                swap(list, i, j);
+        /*} else {
+            ListIterator fwd = list.listIterator();
+            ListIterator rev = list.listIterator(size);
+            for (int i=0, mid=list.size()>>1; i<mid; i++) {
+                Object tmp = fwd.next();
+                fwd.set(rev.previous());
+                rev.set(tmp);
+            }
+        }*/
+    }
+
+    public static void swap(List<?> list, int i, int j) {
+        final List l = list;
+        l.set(i, l.set(j, l.get(i)));
+    }
 }
