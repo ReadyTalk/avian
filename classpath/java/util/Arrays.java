@@ -269,6 +269,14 @@ public class Arrays {
       DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
   }
 
+  public static void sort(float[] a) {
+      DualPivotQuicksort.sort(a);
+  }
+
+  public static void sort(float[] a, int fromIndex, int toIndex) {
+      DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
+  }
+
   private static void checkBinarySearchBounds(int startIndex, int endIndex, int length) {
         if (startIndex > endIndex) {
             throw new IllegalArgumentException();
@@ -323,6 +331,165 @@ public class Arrays {
                 hi = mid - 1;
             } else {
                 return mid;  // value found
+            }
+        }
+        return ~lo;  // value not present
+    }
+
+  /**
+   * Performs a binary search for {@code value} in the ascending sorted array {@code array}.
+   * Searching in an unsorted array has an undefined result. It's also undefined which element
+   * is found if there are multiple occurrences of the same element.
+   *
+   * @param array the sorted array to search.
+   * @param value the element to find.
+   * @return the non-negative index of the element, or a negative index which
+   *         is {@code -index - 1} where the element would be inserted.
+   */
+  public static int binarySearch(byte[] array, byte value) {
+      return binarySearch(array, 0, array.length, value);
+  }
+
+  /**
+     * Performs a binary search for {@code value} in the ascending sorted array {@code array},
+     * in the range specified by fromIndex (inclusive) and toIndex (exclusive).
+     * Searching in an unsorted array has an undefined result. It's also undefined which element
+     * is found if there are multiple occurrences of the same element.
+     *
+     * @param array the sorted array to search.
+     * @param startIndex the inclusive start index.
+     * @param endIndex the exclusive start index.
+     * @param value the element to find.
+     * @return the non-negative index of the element, or a negative index which
+     *         is {@code -index - 1} where the element would be inserted.
+     * @throws IllegalArgumentException if {@code startIndex > endIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code startIndex < 0 || endIndex > array.length}
+     * @since 1.6
+     */
+    public static int binarySearch(byte[] array, int startIndex, int endIndex, byte value) {
+        checkBinarySearchBounds(startIndex, endIndex, array.length);
+        int lo = startIndex;
+        int hi = endIndex - 1;
+
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            byte midVal = array[mid];
+
+            if (midVal < value) {
+                lo = mid + 1;
+            } else if (midVal > value) {
+                hi = mid - 1;
+            } else {
+                return mid;  // value found
+            }
+        }
+        return ~lo;  // value not present
+    }
+
+
+  /**
+   * Performs a binary search for {@code value} in the ascending sorted array {@code array}.
+   * Searching in an unsorted array has an undefined result. It's also undefined which element
+   * is found if there are multiple occurrences of the same element.
+   *
+   * @param array the sorted array to search.
+   * @param value the element to find.
+   * @return the non-negative index of the element, or a negative index which
+   *         is {@code -index - 1} where the element would be inserted.
+   */
+  public static int binarySearch(long[] array, long value) {
+      return binarySearch(array, 0, array.length, value);
+  }
+
+  /**
+     * Performs a binary search for {@code value} in the ascending sorted array {@code array},
+     * in the range specified by fromIndex (inclusive) and toIndex (exclusive).
+     * Searching in an unsorted array has an undefined result. It's also undefined which element
+     * is found if there are multiple occurrences of the same element.
+     *
+     * @param array the sorted array to search.
+     * @param startIndex the inclusive start index.
+     * @param endIndex the exclusive start index.
+     * @param value the element to find.
+     * @return the non-negative index of the element, or a negative index which
+     *         is {@code -index - 1} where the element would be inserted.
+     * @throws IllegalArgumentException if {@code startIndex > endIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code startIndex < 0 || endIndex > array.length}
+     * @since 1.6
+     */
+    public static int binarySearch(long[] array, int startIndex, int endIndex, long value) {
+        checkBinarySearchBounds(startIndex, endIndex, array.length);
+        int lo = startIndex;
+        int hi = endIndex - 1;
+
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            long midVal = array[mid];
+
+            if (midVal < value) {
+                lo = mid + 1;
+            } else if (midVal > value) {
+                hi = mid - 1;
+            } else {
+                return mid;  // value found
+            }
+        }
+        return ~lo;  // value not present
+    }
+
+    /**
+   * Performs a binary search for {@code value} in the ascending sorted array {@code array}.
+   * Searching in an unsorted array has an undefined result. It's also undefined which element
+   * is found if there are multiple occurrences of the same element.
+   *
+   * @param array the sorted array to search.
+   * @param value the element to find.
+   * @return the non-negative index of the element, or a negative index which
+   *         is {@code -index - 1} where the element would be inserted.
+   */
+  public static int binarySearch(float[] array, float value) {
+      return binarySearch(array, 0, array.length, value);
+  }
+
+  /**
+     * Performs a binary search for {@code value} in the ascending sorted array {@code array},
+     * in the range specified by fromIndex (inclusive) and toIndex (exclusive).
+     * Searching in an unsorted array has an undefined result. It's also undefined which element
+     * is found if there are multiple occurrences of the same element.
+     *
+     * @param array the sorted array to search.
+     * @param startIndex the inclusive start index.
+     * @param endIndex the exclusive start index.
+     * @param value the element to find.
+     * @return the non-negative index of the element, or a negative index which
+     *         is {@code -index - 1} where the element would be inserted.
+     * @throws IllegalArgumentException if {@code startIndex > endIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code startIndex < 0 || endIndex > array.length}
+     * @since 1.6
+     */
+    public static int binarySearch(float[] array, int startIndex, int endIndex, float value) {
+        checkBinarySearchBounds(startIndex, endIndex, array.length);
+        int lo = startIndex;
+        int hi = endIndex - 1;
+
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            float midVal = array[mid];
+
+            if (midVal < value) {
+                lo = mid + 1;
+            } else if (midVal > value) {
+                hi = mid - 1;
+            } else {
+                int midValBits = Float.floatToIntBits(midVal);
+                int valueBits  = Float.floatToIntBits(value);
+                if (midValBits < valueBits) {
+                    lo = mid + 1; // (-0.0, 0.0) or (not NaN, NaN); midVal < val
+                } else if (midValBits > valueBits) {
+                    hi = mid - 1; // (0.0, -0.0) or (NaN, not NaN); midVal > val
+                } else {
+                    return mid; // bit patterns are equal; value found
+                }
             }
         }
         return ~lo;  // value not present
