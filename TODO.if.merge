@@ -1,9 +1,7 @@
-1. LinkedHashSet/LinkedHashMap are not linked (copy/past from HashSet/HashMap)
+1. LinkedHashSet/LinkedHashMap are not linked (copy/paste from HashSet/HashMap)
 2. ListIterator is missing for : Collections public static void reverse(List<?> list), 
 		public static <T> void sort(List<T> list, Comparator<? super T> c) {
-3. Fix sorting for Arrays object to quicksort
-
 
 Sources of java code :
 - Arrays.toString (for all arrays), binarySearch  - Android
-- Quicksort - stackoverflow
+- Arrays DualPivotSort, TimSort - jdk7 (copyright Google?)

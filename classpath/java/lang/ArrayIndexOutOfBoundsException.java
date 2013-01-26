@@ -19,6 +19,10 @@ public class ArrayIndexOutOfBoundsException extends IndexOutOfBoundsException {
     this(message, null);
   }
 
+  public ArrayIndexOutOfBoundsException(int index) {
+    this("index=" + index);
+  }
+
   public ArrayIndexOutOfBoundsException(Throwable cause) {
     this(null, cause);
   }
