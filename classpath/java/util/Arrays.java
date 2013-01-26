@@ -170,6 +170,24 @@ public class Arrays {
     }
   }
 
+  public static void fill(int[] array, int start, int end, int value) {
+    for (int i = start; i < end; i++) {
+      array[i] = value;
+    }
+  }
+
+  public static void fill(boolean[] array, boolean value) {
+    for (int i = 0; i < array.length; i++) {
+       array[i] = value;
+    }
+  }
+
+  public static void fill(boolean[] array, int start, int end, boolean value) {
+    for (int i = start; i < end; i++) {
+      array[i] = value;
+    }
+  }
+
   public static void fill(byte[] array, byte value) {
     for (int i = 0; i < array.length; i++) {
        array[i] = value;
@@ -181,6 +199,18 @@ public class Arrays {
       array[i] = value;
     }
   }
+
+  public static void fill(float[] array, float value) {
+    for (int i = 0; i < array.length; i++) {
+       array[i] = value;
+    }
+  }
+
+  public static void fill(float[] array, int start, int end, float value) {
+    for (int i = start; i < end; i++) {
+      array[i] = value;
+    }
+  }  
 
   public static void fill(long[] array, long value) {
     for (int i = 0; i < array.length; i++) {
