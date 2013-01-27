@@ -131,6 +131,13 @@ public final class Double extends Number {
 
   public static native long doubleToRawLongBits(double value);
 
+  public static long doubleToLongBits(double value) {
+    if(Double.isNaN(value)) {
+      return 0x7ff8000000000000L;
+    }
+    return doubleToRawLongBits(value);
+  }
+
   public static native double longBitsToDouble(long bits);
 
   public static native boolean isInfinite(double value);
