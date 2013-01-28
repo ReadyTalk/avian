@@ -250,9 +250,11 @@ public class LinkedList<T> extends AbstractSequentialList<T> {
   private class MyIterator implements ListIterator<T> {
     private Cell<T> toRemove;
     private Cell<T> current;
+    private int index = -1;
 
     public T previous() {
       if (hasPrevious()) {
+        index --;
         T v = current.value;
         toRemove = current;
         current = current.prev;
@@ -266,7 +268,9 @@ public class LinkedList<T> extends AbstractSequentialList<T> {
       if (hasNext()) {
         if (current == null) {
           current = front;
+          index = 0;
         } else {
+          index ++;
           current = current.next;
         }
         toRemove = current;
@@ -286,6 +290,18 @@ public class LinkedList<T> extends AbstractSequentialList<T> {
 
     public boolean hasPrevious() {
       return current != null;
+    }
+
+    public int nextIndex() {
+      return index + 1;
+    }
+
+    public int previousIndex() {
+      return index;
+    }
+
+    public void set(T object) {
+      LinkedList.this.set(index, object);
     }
 
     public void remove() {

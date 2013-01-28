@@ -10,4 +10,8 @@
 
 package java.util;
 
-public abstract class AbstractMap<K,V> extends Object implements Map<K,V> { }
+public abstract class AbstractMap<K,V> extends Object implements Map<K,V> {
+    public boolean isEmpty() {
+    	return size() == 0;
+    }
+ }

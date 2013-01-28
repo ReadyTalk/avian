@@ -28,6 +28,28 @@ public abstract class AbstractList<T> extends AbstractCollection<T>
     return new Collections.ArrayListIterator(this);
   }
 
+  public ListIterator<T> listIterator(int index) {
+    return new Collections.ArrayListIterator(this, index);
+  }
+
+  public int lastIndexOf(Object object) {
+        ListIterator<?> it = listIterator(size());
+        if (object != null) {
+            while (it.hasPrevious()) {
+                if (object.equals(it.previous())) {
+                    return it.nextIndex();
+                }
+            }
+        } else {
+            while (it.hasPrevious()) {
+                if (it.previous() == null) {
+                    return it.nextIndex();
+                }
+            }
+        }
+        return -1;
+    }
+
   public int indexOf(Object o) {
     int i = 0;
     for (T v: this) {

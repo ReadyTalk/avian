@@ -9,6 +9,7 @@
    details. */
 
 package java.util;
+import java.io.Serializable;
 
 public class Collections {
 
@@ -277,6 +278,14 @@ public class Collections {
       return index >= 0;
     }
 
+    public int nextIndex() {
+      return index + 1;
+    }
+
+    public int previousIndex() {
+      return index;
+    }
+
     public T previous() {
       if (hasPrevious()) {
         toRemove = index;
@@ -304,6 +313,18 @@ public class Collections {
         list.remove(toRemove);
         index = toRemove - 1;
         toRemove = -1;
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+
+    public void set(T object) {
+      if (toRemove != -1) {
+       try {
+         list.set(toRemove, object);
+       } catch (IndexOutOfBoundsException e) {
+          throw new IllegalStateException();
+       }
       } else {
         throw new IllegalStateException();
       }
@@ -618,22 +639,14 @@ public class Collections {
     }
 
     private static final int REVERSE_THRESHOLD        =   18;
-    /**
-     * Reverses the order of the elements in the specified list.<p>
-     *
-     * This method runs in linear time.
-     *
-     * @param  list the list whose elements are to be reversed.
-     * @throws UnsupportedOperationException if the specified list or
-     *         its list-iterator does not support the <tt>set</tt> operation.
-     */
+
     public static void reverse(List<?> list) {
         int size = list.size();
         // Could be very inefficient
-        //if (size < REVERSE_THRESHOLD || list instanceof RandomAccess) {
+        if (size < REVERSE_THRESHOLD || list instanceof ArrayList) {
             for (int i=0, mid=size>>1, j=size-1; i<mid; i++, j--)
                 swap(list, i, j);
-        /*} else {
+        } else {
             ListIterator fwd = list.listIterator();
             ListIterator rev = list.listIterator(size);
             for (int i=0, mid=list.size()>>1; i<mid; i++) {
@@ -641,11 +654,211 @@ public class Collections {
                 fwd.set(rev.previous());
                 rev.set(tmp);
             }
-        }*/
+        }
     }
 
     public static void swap(List<?> list, int i, int j) {
         final List l = list;
         l.set(i, l.set(j, l.get(i)));
+    }
+
+    public static <E> Set<E> singleton(E object) {
+        return new SingletonSet<E>(object);
+    }
+
+    public static <E> List<E> singletonList(E object) {
+        return new SingletonList<E>(object);
+    }
+
+    public static <K, V> Map<K, V> singletonMap(K key, V value) {
+        return new SingletonMap<K, V>(key, value);
+    }
+
+
+    private static final class SingletonSet<E> extends AbstractSet<E> implements Serializable {
+        private static final long serialVersionUID = 3193687207550431679L;
+        final E element;
+
+        SingletonSet(E object) {
+            element = object;
+        }
+
+        @Override public boolean contains(Object object) {
+            return element == null ? object == null : element.equals(object);
+        }
+
+        @Override public int size() {
+            return 1;
+        }
+
+        @Override public Iterator<E> iterator() {
+            return new Iterator<E>() {
+                boolean hasNext = true;
+
+                @Override public boolean hasNext() {
+                    return hasNext;
+                }
+
+                @Override public E next() {
+                    if (hasNext) {
+                        hasNext = false;
+                        return element;
+                    }
+                    throw new NoSuchElementException();
+                }
+
+                @Override public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+    }
+
+    private static final class SingletonList<E> extends AbstractList<E> implements Serializable {
+        private static final long serialVersionUID = 3093736618740652951L;
+
+        final E element;
+
+        SingletonList(E object) {
+            element = object;
+        }
+
+        @Override public boolean contains(Object object) {
+            return element == null ? object == null : element.equals(object);
+        }
+
+        @Override public void add(int index, E element)  {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override public E set(int index, E element)  {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override public E remove(int index)  {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override public boolean add(E element)  {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override public E get(int location) {
+            if (location == 0) {
+                return element;
+            }
+            throw new IndexOutOfBoundsException();
+        }
+
+        @Override public int size() {
+            return 1;
+        }
+    }
+
+
+    private static final class SingletonMap<K, V> extends AbstractMap<K, V>
+            implements Serializable {
+        private static final long serialVersionUID = -6979724477215052911L;
+
+        final K k;
+        final V v;
+
+        SingletonMap(K key, V value) {
+            k = key;
+            v = value;
+        }
+
+        @Override public boolean containsKey(Object key) {
+            return k == null ? key == null : k.equals(key);
+        }
+
+        @Override public boolean containsValue(Object value) {
+            return v == null ? value == null : v.equals(value);
+        }
+
+        @Override public Collection<V> values() {
+          return new SingletonList(v);
+        }
+
+        @Override public Set<K> keySet() {
+          return new SingletonSet(v);
+        }
+
+        @Override public V get(Object key) {
+            if (containsKey(key)) {
+                return v;
+            }
+            return null;
+        }
+
+        @Override public void clear() {
+          throw new UnsupportedOperationException();
+        }
+        @Override public void putAll(Map<? extends K,? extends V> elts) {
+          throw new UnsupportedOperationException();
+        }
+        @Override public V put(K key, V value) {
+          throw new UnsupportedOperationException(); 
+        }
+
+        @Override public V remove(Object o) {
+          return null;
+        }
+
+        @Override public int size() {
+            return 1;
+        }
+
+        @Override public Set<Map.Entry<K, V>> entrySet() {
+            return new AbstractSet<Map.Entry<K, V>>() {
+                @Override public boolean contains(Object object) {
+                    if (object instanceof Map.Entry) {
+                        Map.Entry<?, ?> entry = (Map.Entry<?, ?>) object;
+                        return containsKey(entry.getKey())
+                                && containsValue(entry.getValue());
+                    }
+                    return false;
+                }
+
+                @Override public int size() {
+                    return 1;
+                }
+
+                @Override public Iterator<Map.Entry<K, V>> iterator() {
+                    return new Iterator<Map.Entry<K, V>>() {
+                        boolean hasNext = true;
+
+                        @Override public boolean hasNext() {
+                            return hasNext;
+                        }
+
+                        @Override public Map.Entry<K, V> next() {
+                            if (!hasNext) {
+                                throw new NoSuchElementException();
+                            }
+
+                            hasNext = false;
+                            return new Map.Entry<K, V>() {
+                                @Override public V setValue(V value) {
+                                    throw new UnsupportedOperationException();
+                                }
+                                @Override public K getKey() {
+                                  return k;
+                                }
+
+                                public V getValue() {
+                                     return v;
+
+                                }
+                            };
+                        }
+
+                        @Override public void remove() {
+                            throw new UnsupportedOperationException();
+                        }
+                    };
+                }
+            };
+        }
     }
 }

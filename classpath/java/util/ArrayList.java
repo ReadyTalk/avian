@@ -164,17 +164,6 @@ public class ArrayList<T> extends AbstractList<T> implements java.io.Serializabl
     size = 0;
   }
 
-  public Iterator<T> iterator() {
-    return listIterator();
-  }
-
-  public ListIterator<T> listIterator(int index) {
-    return new Collections.ArrayListIterator(this, index);
-  }
-
-  public ListIterator<T> listIterator() {
-    return listIterator(0);
-  }
 
   public String toString() {
     return Collections.toString(this);
