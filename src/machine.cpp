@@ -3002,7 +3002,8 @@ Machine::Machine(System* system, Heap* heap, Finder* bootFinder,
 
   populateJNITables(&javaVMVTable, &jniEnvVTable);
 
-  const char* bootstrapProperty = strdup(findProperty(this, BOOTSTRAP_PROPERTY));
+  const char* bootstrapProperty = findProperty(this, BOOTSTRAP_PROPERTY);
+  const char* bootstrapPropertyDup = bootstrapProperty ? strdup(bootstrapProperty) : 0;
   const char* bootstrapPropertyEnd = bootstrapProperty + (bootstrapProperty ? strlen(bootstrapProperty) : 0);
   char* codeLibraryName = (char*)bootstrapProperty;
   char* codeLibraryNameEnd = 0;
@@ -3033,7 +3034,8 @@ Machine::Machine(System* system, Heap* heap, Finder* bootFinder,
     libraries->setNext(additionalLibrary);
   }
 
-  free((void*)bootstrapProperty);
+  if(bootstrapPropertyDup)
+    free((void*)bootstrapPropertyDup);
 }
 
 void
