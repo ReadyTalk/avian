@@ -1,4 +1,5 @@
 1. LinkedHashSet/LinkedHashMap are not linked (copy/paste	 from HashSet/HashMap)
+2. Collections reverse doesn't use listIterator.
 
 Sources of java code :
 - Arrays.toString (for all arrays), binarySearch  - Android
