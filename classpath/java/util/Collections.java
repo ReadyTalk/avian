@@ -329,6 +329,10 @@ public class Collections {
         throw new IllegalStateException();
       }
     }
+	
+    public void add(T object) {
+      throw new UnsupportedOperationException();
+    }
   }
 
   public static <T> List<T> unmodifiableList(List<T> list)  {

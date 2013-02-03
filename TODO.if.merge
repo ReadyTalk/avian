@@ -1,6 +1,1 @@
 1. LinkedHashSet/LinkedHashMap are not linked (copy/paste	extend from HashSet/HashMap)
-Copied source code :
-1) Arrays.toString (all types) - Android
-2) Arrays.binarySearch (all types) - Android
-3) Arrays.sort (object and primitives) - Android
-   Arrays sort helpers DualPivotSort, TimSort - jdk7 (copyright Google?)
