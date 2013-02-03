@@ -7,5 +7,4 @@ build
 bin
 /lib
 /distrib
-avian
-osmand*
+*.pdb
