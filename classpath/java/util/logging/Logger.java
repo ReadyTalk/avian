@@ -130,7 +130,7 @@ public class Logger {
   }
   
   public boolean isLoggable(Level level) {
-    return level.intValue() >= levelValue.intValue();
+    return levelValue != null && level != null && level.intValue() >= levelValue.intValue();
   }
   
   private static class DefaultHandler extends Handler {

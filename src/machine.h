@@ -1325,6 +1325,9 @@ checkDaemon(Thread* t);
 object&
 root(Thread* t, Machine::Root root);
 
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+#  define vmRun vmRun_
+#endif
 extern "C" uint64_t
 vmRun(uint64_t (*function)(Thread*, uintptr_t*), uintptr_t* arguments,
       void* checkpoint);
@@ -2689,7 +2692,7 @@ throw_(Thread* t, object e)
 
   t->exception = e;
 
-  // printTrace(t, e);
+  printTrace(t, e);
 
   popResources(t);
 

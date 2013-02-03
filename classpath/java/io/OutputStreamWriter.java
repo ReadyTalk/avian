@@ -18,6 +18,16 @@ public class OutputStreamWriter extends Writer {
   public OutputStreamWriter(OutputStream out) {
     this.out = out;
   }
+  public OutputStreamWriter(OutputStream out, final String enc)
+            throws UnsupportedEncodingException {
+    this(out);
+    if (enc == null) {
+      throw new NullPointerException();
+    }
+    if(!enc.equals("UTF-8") && !enc.equals("UTF8")){
+      throw new UnsupportedEncodingException(enc);
+    }
+  }
   
   public void write(char[] b, int offset, int length) throws IOException {
     out.write(Utf8.encode(b, offset, length));

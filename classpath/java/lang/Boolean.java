@@ -58,4 +58,8 @@ public final class Boolean implements Comparable<Boolean> {
   public boolean booleanValue() {
     return value;
   }
+
+  public static boolean parseBoolean(String name) {
+    return ((name != null) && name.equalsIgnoreCase("true"));
+  }
 }

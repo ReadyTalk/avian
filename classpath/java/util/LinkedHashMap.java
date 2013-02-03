@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2011, Avian Contributors
+/* Copyright (c) 2008-2010, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -10,8 +10,20 @@
 
 package java.util;
 
-public abstract class AbstractMap<K,V> extends Object implements Map<K,V> {
-    public boolean isEmpty() {
-    	return size() == 0;
-    }
- }
+public class LinkedHashMap<K, V> extends HashMap<K, V> {
+  
+
+  public LinkedHashMap(int capacity) {
+    super(capacity);
+  }
+
+  public LinkedHashMap() {
+    super(0);
+  }
+
+  public LinkedHashMap(Map<K, V> map) {
+    super(map);
+    
+  }
+
+}

@@ -96,10 +96,47 @@ public final class Double extends Number {
     }
   }
 
+  public static int compare(double double1, double double2) {
+        // Non-zero, non-NaN checking.
+        if (double1 > double2) {
+            return 1;
+        }
+        if (double2 > double1) {
+            return -1;
+        }
+        if (double1 == double2 && 0.0d != double1) {
+            return 0;
+        }
+
+        // NaNs are equal to other NaNs and larger than any other double
+        if (isNaN(double1)) {
+            if (isNaN(double2)) {
+                return 0;
+            }
+            return 1;
+        } else if (isNaN(double2)) {
+            return -1;
+        }
+
+        // Deal with +0.0 and -0.0
+        long d1 = doubleToRawLongBits(double1);
+        long d2 = doubleToRawLongBits(double2);
+        // The below expression is equivalent to:
+        // (d1 == d2) ? 0 : (d1 < d2) ? -1 : 1
+        return (int) ((d1 >> 63) - (d2 >> 63));
+    }
+
   public static native int fillBufferWithDouble(double value, byte[] buffer,
                                                 int charCount);
 
   public static native long doubleToRawLongBits(double value);
+
+  public static long doubleToLongBits(double value) {
+    if(Double.isNaN(value)) {
+      return 0x7ff8000000000000L;
+    }
+    return doubleToRawLongBits(value);
+  }
 
   public static native double longBitsToDouble(long bits);
 
