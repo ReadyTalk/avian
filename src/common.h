@@ -235,27 +235,6 @@ alias(void* p, unsigned offset)
 
 #ifdef _MSC_VER
 
-template <class T>
-class RuntimeArray {
- public:
-  RuntimeArray(unsigned size):
-    body(static_cast<T*>(malloc(size * sizeof(T))))
-  { }
-
-  ~RuntimeArray() {
-    free(body);
-  }
-
-  T& operator[] (const unsigned index) {
-    return body[index];
-  }
-
-  T* body;
-};
-
-#  define RUNTIME_ARRAY(type, name, size) RuntimeArray<type> name(size);
-#  define RUNTIME_ARRAY_BODY(name) name.body
-
 inline int
 vsnprintf(char* dst, size_t size, const char* format, va_list a)
 {
@@ -284,9 +263,6 @@ fopen(const char* name, const char* mode)
 }
 
 #else // not _MSC_VER
-
-#  define RUNTIME_ARRAY(type, name, size) type name[size];
-#  define RUNTIME_ARRAY_BODY(name) name
 
 inline int
 vsnprintf(char* dst, size_t size, const char* format, va_list a)
@@ -363,7 +339,7 @@ padWord(uintptr_t n)
 }
 
 inline unsigned
-ceiling(unsigned n, unsigned d)
+ceilingDivide(unsigned n, unsigned d)
 {
   return (n + d - 1) / d;
 }
@@ -489,14 +465,14 @@ getBits(T* map, unsigned bitsPerRecord, unsigned index)
 
 template <class T>
 inline T&
-cast(void* p, unsigned offset)
+fieldAtOffset(void* p, unsigned offset)
 {
   return *reinterpret_cast<T*>(static_cast<uint8_t*>(p) + offset);
 }
 
 template <class T>
 inline T*
-mask(T* p)
+maskAlignedPointer(T* p)
 {
   return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(p) & PointerMask);
 }

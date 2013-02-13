@@ -8,8 +8,11 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
-#include "assembler.h"
-#include "vector.h"
+#include "alloc-vector.h"
+
+#include "codegen/assembler.h"
+
+#include "util/runtime-array.h"
 
 #define CAST1(x) reinterpret_cast<UnaryOperationType>(x)
 #define CAST2(x) reinterpret_cast<BinaryOperationType>(x)
@@ -2500,6 +2503,8 @@ class MyArchitecture: public Assembler::Architecture {
     }
   }
 
+  virtual Assembler* makeAssembler(Allocator* allocator, Zone* zone);
+
   virtual void acquire() {
     ++ referenceCount;
   }
@@ -2560,10 +2565,10 @@ class MyAssembler: public Assembler {
     va_list a; va_start(a, argumentCount);
     unsigned footprint = 0;
     for (unsigned i = 0; i < argumentCount; ++i) {
-      arguments[i].size = va_arg(a, unsigned);
-      arguments[i].type = static_cast<OperandType>(va_arg(a, int));
-      arguments[i].operand = va_arg(a, Operand*);
-      footprint += ceiling(arguments[i].size, TargetBytesPerWord);
+      RUNTIME_ARRAY_BODY(arguments)[i].size = va_arg(a, unsigned);
+      RUNTIME_ARRAY_BODY(arguments)[i].type = static_cast<OperandType>(va_arg(a, int));
+      RUNTIME_ARRAY_BODY(arguments)[i].operand = va_arg(a, Operand*);
+      footprint += ceilingDivide(RUNTIME_ARRAY_BODY(arguments)[i].size, TargetBytesPerWord);
     }
     va_end(a);
 
@@ -2575,19 +2580,23 @@ class MyAssembler: public Assembler {
         Register dst(arch_->argumentRegister(i));
 
         apply(Move,
-              arguments[i].size, arguments[i].type, arguments[i].operand,
-              pad(arguments[i].size, TargetBytesPerWord), RegisterOperand,
+              RUNTIME_ARRAY_BODY(arguments)[i].size,
+              RUNTIME_ARRAY_BODY(arguments)[i].type,
+              RUNTIME_ARRAY_BODY(arguments)[i].operand,
+              pad(RUNTIME_ARRAY_BODY(arguments)[i].size, TargetBytesPerWord), RegisterOperand,
               &dst);
 
-        offset += ceiling(arguments[i].size, TargetBytesPerWord);
+        offset += ceilingDivide(RUNTIME_ARRAY_BODY(arguments)[i].size, TargetBytesPerWord);
       } else {
         Memory dst(StackRegister, offset * TargetBytesPerWord);
 
         apply(Move,
-              arguments[i].size, arguments[i].type, arguments[i].operand,
-              pad(arguments[i].size, TargetBytesPerWord), MemoryOperand, &dst);
+              RUNTIME_ARRAY_BODY(arguments)[i].size,
+              RUNTIME_ARRAY_BODY(arguments)[i].type,
+              RUNTIME_ARRAY_BODY(arguments)[i].operand,
+              pad(RUNTIME_ARRAY_BODY(arguments)[i].size, TargetBytesPerWord), MemoryOperand, &dst);
 
-        offset += ceiling(arguments[i].size, TargetBytesPerWord);
+        offset += ceilingDivide(RUNTIME_ARRAY_BODY(arguments)[i].size, TargetBytesPerWord);
       }
     }
   }
@@ -2897,22 +2906,20 @@ class MyAssembler: public Assembler {
   MyArchitecture* arch_;
 };
 
+Assembler* MyArchitecture::makeAssembler(Allocator* allocator, Zone* zone) {
+  return new(zone) MyAssembler(this->con.s, allocator, zone, this);
+}
+
 } // namespace
 
-namespace vm {
+namespace avian {
+namespace codegen {
 
 Assembler::Architecture*
-makeArchitecture(System* system, bool)
+makeArchitectureArm(System* system, bool)
 {
   return new (allocate(system, sizeof(local::MyArchitecture))) local::MyArchitecture(system);
 }
 
-Assembler*
-makeAssembler(System* system, Allocator* allocator, Zone* zone,
-              Assembler::Architecture* architecture)
-{
-  return new(zone) local::MyAssembler(system, allocator, zone,
-                static_cast<local::MyArchitecture*>(architecture));
-}
-
-} // namespace vm
+} // namespace codegen
+} // namespace avian

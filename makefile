@@ -25,6 +25,8 @@ bootimage-platform = \
 	$(subst cygwin,windows,$(subst mingw32,windows,$(build-platform)))
 platform = $(bootimage-platform)
 
+codegen-targets = native
+
 mode = fast
 process = compile
 
@@ -48,6 +50,9 @@ ifeq ($(tails),true)
 endif
 ifeq ($(continuations),true)
 	options := $(options)-continuations
+endif
+ifeq ($(codegen-targets),all)
+	options := $(options)-all
 endif
 
 aot-only = false
@@ -918,7 +923,7 @@ generated-code = \
 	$(build)/type-name-initializations.cpp \
 	$(build)/type-maps.cpp
 
-vm-depends := $(generated-code) $(wildcard $(src)/*.h)
+vm-depends := $(generated-code) $(wildcard $(src)/*.h) $(wildcard $(src)/codegen/*.h)
 
 vm-sources = \
 	$(src)/$(system).cpp \
@@ -947,8 +952,19 @@ embed-objects = $(call cpp-objects,$(embed-sources),$(src),$(build-embed))
 
 ifeq ($(process),compile)
 	vm-sources += \
-		$(src)/compiler.cpp \
-		$(src)/$(target-asm).cpp
+		$(src)/codegen/compiler.cpp \
+		$(src)/codegen/targets.cpp
+
+	ifeq ($(codegen-targets),native)
+		vm-sources += \
+			$(src)/codegen/$(target-asm)/assembler.cpp
+	endif
+	ifeq ($(codegen-targets),all)
+		vm-sources += \
+			$(src)/codegen/x86/assembler.cpp \
+			$(src)/codegen/arm/assembler.cpp \
+			$(src)/codegen/powerpc/assembler.cpp
+	endif
 
 	vm-asm-sources += $(src)/compile-$(asm).$(asm-format)
 endif

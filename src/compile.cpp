@@ -10,12 +10,15 @@
 
 #include "machine.h"
 #include "util.h"
-#include "vector.h"
+#include "alloc-vector.h"
 #include "process.h"
-#include "assembler.h"
 #include "target.h"
-#include "compiler.h"
+#include "codegen/assembler.h"
+#include "codegen/compiler.h"
+#include "codegen/targets.h"
 #include "arch.h"
+
+#include "util/runtime-array.h"
 
 using namespace vm;
 
@@ -262,7 +265,7 @@ class MyThread: public Thread {
     reference(0),
     arch(parent
          ? parent->arch
-         : makeArchitecture(m->system, useNativeFeatures)),
+         : avian::codegen::makeArchitectureNative(m->system, useNativeFeatures)),
     transition(0),
     traceContext(0),
     stackLimit(0),
@@ -940,7 +943,7 @@ frameMapSizeInBits(MyThread* t, object method)
 unsigned
 frameMapSizeInWords(MyThread* t, object method)
 {
-  return ceiling(frameMapSizeInBits(t, method), BitsPerWord);
+  return ceilingDivide(frameMapSizeInBits(t, method), BitsPerWord);
 }
 
 uint16_t*
@@ -1223,7 +1226,7 @@ class Context {
   Context(MyThread* t, BootContext* bootContext, object method):
     thread(t),
     zone(t->m->system, t->m->heap, InitialZoneCapacityInBytes),
-    assembler(makeAssembler(t->m->system, t->m->heap, &zone, t->arch)),
+    assembler(t->arch->makeAssembler(t->m->heap, &zone)),
     client(t),
     compiler(makeCompiler(t->m->system, assembler, &zone, &client)),
     method(method),
@@ -1249,7 +1252,7 @@ class Context {
   Context(MyThread* t):
     thread(t),
     zone(t->m->system, t->m->heap, InitialZoneCapacityInBytes),
-    assembler(makeAssembler(t->m->system, t->m->heap, &zone, t->arch)),
+    assembler(t->arch->makeAssembler(t->m->heap, &zone)),
     client(t),
     compiler(0),
     method(0),
@@ -3047,22 +3050,22 @@ getFieldValue(Thread* t, object target, object field)
   switch (fieldCode(t, field)) {
   case ByteField:
   case BooleanField:
-    return cast<int8_t>(target, fieldOffset(t, field));
+    return fieldAtOffset<int8_t>(target, fieldOffset(t, field));
 
   case CharField:
   case ShortField:
-    return cast<int16_t>(target, fieldOffset(t, field));
+    return fieldAtOffset<int16_t>(target, fieldOffset(t, field));
 
   case FloatField:
   case IntField:
-    return cast<int32_t>(target, fieldOffset(t, field));
+    return fieldAtOffset<int32_t>(target, fieldOffset(t, field));
 
   case DoubleField:
   case LongField:
-    return cast<int64_t>(target, fieldOffset(t, field));
+    return fieldAtOffset<int64_t>(target, fieldOffset(t, field));
 
   case ObjectField:
-    return cast<intptr_t>(target, fieldOffset(t, field));
+    return fieldAtOffset<intptr_t>(target, fieldOffset(t, field));
 
   default:
     abort(t);
@@ -3105,7 +3108,7 @@ setStaticLongFieldValueFromReference(MyThread* t, object pair, uint64_t value)
 
   ACQUIRE_FIELD_FOR_WRITE(t, field);
 
-  cast<int64_t>
+  fieldAtOffset<int64_t>
     (classStaticTable(t, fieldClass(t, field)), fieldOffset(t, field)) = value;
 }
 
@@ -3120,7 +3123,7 @@ setLongFieldValueFromReference(MyThread* t, object pair, object instance,
 
   ACQUIRE_FIELD_FOR_WRITE(t, field);
 
-  cast<int64_t>(instance, fieldOffset(t, field)) = value;
+  fieldAtOffset<int64_t>(instance, fieldOffset(t, field)) = value;
 }
 
 void
@@ -3160,17 +3163,17 @@ setFieldValue(MyThread* t, object target, object field, uint32_t value)
   switch (fieldCode(t, field)) {
   case ByteField:
   case BooleanField:
-    cast<int8_t>(target, fieldOffset(t, field)) = value;
+    fieldAtOffset<int8_t>(target, fieldOffset(t, field)) = value;
     break;
 
   case CharField:
   case ShortField:
-    cast<int16_t>(target, fieldOffset(t, field)) = value;
+    fieldAtOffset<int16_t>(target, fieldOffset(t, field)) = value;
     break;
 
   case FloatField:
   case IntField:
-    cast<int32_t>(target, fieldOffset(t, field)) = value;
+    fieldAtOffset<int32_t>(target, fieldOffset(t, field)) = value;
     break;
 
   default:
@@ -6928,7 +6931,7 @@ unsigned
 simpleFrameMapTableSize(MyThread* t, object method, object map)
 {
   int size = frameMapSizeInBits(t, method);
-  return ceiling(intArrayLength(t, map) * size, 32 + size);
+  return ceilingDivide(intArrayLength(t, map) * size, 32 + size);
 }
 
 uint8_t*
@@ -6965,7 +6968,7 @@ copyFrameMap(int32_t* dst, uintptr_t* src, unsigned mapSizeInBits,
 {
   if (DebugFrameMaps) {
     fprintf(stderr, "  orig roots at ip %3d: ", p->ip);
-    printSet(src, ceiling(mapSizeInBits, BitsPerWord));
+    printSet(src, ceilingDivide(mapSizeInBits, BitsPerWord));
     print(subroutinePath);
     fprintf(stderr, "\n");
 
@@ -7068,7 +7071,7 @@ makeGeneralFrameMapTable(MyThread* t, Context* context, uint8_t* start,
   unsigned indexOffset = sizeof(FrameMapTableHeader);
   unsigned mapsOffset = indexOffset
     + (elementCount * sizeof(FrameMapTableIndexElement));
-  unsigned pathsOffset = mapsOffset + (ceiling(mapCount * mapSize, 32) * 4);
+  unsigned pathsOffset = mapsOffset + (ceilingDivide(mapCount * mapSize, 32) * 4);
 
   object table = makeByteArray(t, pathsOffset + pathFootprint);
   
@@ -7143,7 +7146,7 @@ makeGeneralFrameMapTable(MyThread* t, Context* context, uint8_t* start,
             sizeof(SubroutineTrace*), compareSubroutineTracePointers);
 
       for (unsigned i = 0; i < p->subroutineTraceCount; ++i) {
-        assert(t, mapsOffset + ceiling(nextMapIndex + mapSize, 32) * 4
+        assert(t, mapsOffset + ceilingDivide(nextMapIndex + mapSize, 32) * 4
                <= pathsOffset);
 
         copyFrameMap(reinterpret_cast<int32_t*>(body + mapsOffset),
@@ -7155,7 +7158,7 @@ makeGeneralFrameMapTable(MyThread* t, Context* context, uint8_t* start,
     } else {
       pathIndex = 0;
 
-      assert(t, mapsOffset + ceiling(nextMapIndex + mapSize, 32) * 4
+      assert(t, mapsOffset + ceilingDivide(nextMapIndex + mapSize, 32) * 4
              <= pathsOffset);
 
       copyFrameMap(reinterpret_cast<int32_t*>(body + mapsOffset), p->map,
@@ -7185,7 +7188,7 @@ makeSimpleFrameMapTable(MyThread* t, Context* context, uint8_t* start,
 {
   unsigned mapSize = frameMapSizeInBits(t, context->method);
   object table = makeIntArray
-    (t, elementCount + ceiling(elementCount * mapSize, 32));
+    (t, elementCount + ceilingDivide(elementCount * mapSize, 32));
 
   assert(t, intArrayLength(t, table) == elementCount
          + simpleFrameMapTableSize(t, context->method, table));
@@ -7196,7 +7199,7 @@ makeSimpleFrameMapTable(MyThread* t, Context* context, uint8_t* start,
     intArrayBody(t, table, i) = static_cast<intptr_t>(p->address->value())
       - reinterpret_cast<intptr_t>(start);
 
-    assert(t, elementCount + ceiling((i + 1) * mapSize, 32)
+    assert(t, elementCount + ceilingDivide((i + 1) * mapSize, 32)
            <= intArrayLength(t, table));
 
     if (mapSize) {
@@ -8499,11 +8502,11 @@ class ArgumentList {
       
       case 'J':
       case 'D':
-        addLong(cast<int64_t>(objectArrayBody(t, arguments, index++), 8));
+        addLong(fieldAtOffset<int64_t>(objectArrayBody(t, arguments, index++), 8));
         break;
 
       default:
-        addInt(cast<int32_t>(objectArrayBody(t, arguments, index++),
+        addInt(fieldAtOffset<int32_t>(objectArrayBody(t, arguments, index++),
                              BytesPerWord));
         break;
       }
@@ -9934,7 +9937,7 @@ boot(MyThread* t, BootImage* image, uint8_t* code)
   uintptr_t* heapMap = reinterpret_cast<uintptr_t*>
     (padWord(reinterpret_cast<uintptr_t>(callTable + (image->callCount * 2))));
 
-  unsigned heapMapSizeInWords = ceiling
+  unsigned heapMapSizeInWords = ceilingDivide
     (heapMapSize(image->heapSize), BytesPerWord);
   uintptr_t* heap = heapMap + heapMapSizeInWords;
 
@@ -9943,7 +9946,7 @@ boot(MyThread* t, BootImage* image, uint8_t* code)
   t->heapImage = p->heapImage = heap;
 
   // fprintf(stderr, "heap from %p to %p\n",
-  //         heap, heap + ceiling(image->heapSize, BytesPerWord));
+  //         heap, heap + ceilingDivide(image->heapSize, BytesPerWord));
 
   t->codeImage = p->codeImage = code;
   p->codeImageSize = image->codeSize;

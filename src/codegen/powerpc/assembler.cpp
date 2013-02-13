@@ -8,8 +8,8 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
-#include "assembler.h"
-#include "vector.h"
+#include "codegen/assembler.h"
+#include "alloc-vector.h"
 
 #define CAST1(x) reinterpret_cast<UnaryOperationType>(x)
 #define CAST2(x) reinterpret_cast<BinaryOperationType>(x)
@@ -2238,7 +2238,7 @@ class MyArchitecture: public Assembler::Architecture {
 
   virtual unsigned alignFrameSize(unsigned sizeInWords) {
     const unsigned alignment = StackAlignmentInWords;
-    return (ceiling(sizeInWords + FrameFooterSize, alignment) * alignment);
+    return (ceilingDivide(sizeInWords + FrameFooterSize, alignment) * alignment);
   }
 
   virtual void nextFrame(void* start, unsigned size, unsigned footprint,
@@ -2446,6 +2446,8 @@ class MyArchitecture: public Assembler::Architecture {
     }
   }
 
+  virtual Assembler* makeAssembler(Allocator* allocator, Zone* zone);
+
   virtual void acquire() {
     ++ referenceCount;
   }
@@ -2513,7 +2515,7 @@ class MyAssembler: public Assembler {
       arguments[i].size = va_arg(a, unsigned);
       arguments[i].type = static_cast<OperandType>(va_arg(a, int));
       arguments[i].operand = va_arg(a, Operand*);
-      footprint += ceiling(arguments[i].size, TargetBytesPerWord);
+      footprint += ceilingDivide(arguments[i].size, TargetBytesPerWord);
     }
     va_end(a);
 
@@ -2529,7 +2531,7 @@ class MyAssembler: public Assembler {
               pad(arguments[i].size, TargetBytesPerWord), RegisterOperand,
               &dst);
 
-        offset += ceiling(arguments[i].size, TargetBytesPerWord);
+        offset += ceilingDivide(arguments[i].size, TargetBytesPerWord);
       } else {
         Memory dst
           (ThreadRegister, (offset + FrameFooterSize) * TargetBytesPerWord);
@@ -2538,7 +2540,7 @@ class MyAssembler: public Assembler {
               arguments[i].size, arguments[i].type, arguments[i].operand,
               pad(arguments[i].size, TargetBytesPerWord), MemoryOperand, &dst);
 
-        offset += ceiling(arguments[i].size, TargetBytesPerWord);
+        offset += ceilingDivide(arguments[i].size, TargetBytesPerWord);
       }
     }
   }
@@ -2858,23 +2860,20 @@ class MyAssembler: public Assembler {
   MyArchitecture* arch_;
 };
 
+Assembler* MyArchitecture::makeAssembler(Allocator* allocator, Zone* zone) {
+  return new(zone) MyAssembler(this->c.s, allocator, zone, this);
+}
+
 } // namespace
 
-namespace vm {
+namespace avian {
+namespace codegen {
 
 Assembler::Architecture*
-makeArchitecture(System* system, bool)
+makeArchitecturePowerpc(System* system, bool)
 {
   return new (allocate(system, sizeof(MyArchitecture))) MyArchitecture(system);
 }
 
-Assembler*
-makeAssembler(System* system, Allocator* allocator, Zone* zone,
-              Assembler::Architecture* architecture)
-{
-  return
-    new(zone) MyAssembler(system, allocator, zone,
-                          static_cast<MyArchitecture*>(architecture));
-}
-
-} // namespace vm
+} // namespace codegen
+} // namespace avian

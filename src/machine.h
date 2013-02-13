@@ -1614,7 +1614,7 @@ typedef uint64_t (JNICALL *FastNativeFunction)(Thread*, object, uintptr_t*);
 inline object
 objectClass(Thread*, object o)
 {
-  return mask(cast<object>(o, 0));
+  return maskAlignedPointer(fieldAtOffset<object>(o, 0));
 }
 
 inline unsigned
@@ -1821,7 +1821,7 @@ class FixedAllocator: public Allocator {
 inline bool
 ensure(Thread* t, unsigned sizeInBytes)
 {
-  if (t->heapIndex + ceiling(sizeInBytes, BytesPerWord)
+  if (t->heapIndex + ceilingDivide(sizeInBytes, BytesPerWord)
       > ThreadHeapSizeInWords)
   {
     if (sizeInBytes <= ThreadBackupHeapSizeInBytes) {
@@ -1848,11 +1848,11 @@ allocate3(Thread* t, Allocator* allocator, Machine::AllocationType type,
 inline object
 allocateSmall(Thread* t, unsigned sizeInBytes)
 {
-  assert(t, t->heapIndex + ceiling(sizeInBytes, BytesPerWord)
+  assert(t, t->heapIndex + ceilingDivide(sizeInBytes, BytesPerWord)
          <= ThreadHeapSizeInWords);
 
   object o = reinterpret_cast<object>(t->heap + t->heapIndex);
-  t->heapIndex += ceiling(sizeInBytes, BytesPerWord);
+  t->heapIndex += ceilingDivide(sizeInBytes, BytesPerWord);
   return o;
 }
 
@@ -1861,7 +1861,7 @@ allocate(Thread* t, unsigned sizeInBytes, bool objectMask)
 {
   stress(t);
 
-  if (UNLIKELY(t->heapIndex + ceiling(sizeInBytes, BytesPerWord)
+  if (UNLIKELY(t->heapIndex + ceilingDivide(sizeInBytes, BytesPerWord)
                > ThreadHeapSizeInWords
                or t->m->exclusive))
   {
@@ -1886,18 +1886,18 @@ mark(Thread* t, object o, unsigned offset)
 inline void
 set(Thread* t, object target, unsigned offset, object value)
 {
-  cast<object>(target, offset) = value;
+  fieldAtOffset<object>(target, offset) = value;
   mark(t, target, offset);
 }
 
 inline void
 setObjectClass(Thread*, object o, object value)
 {
-  cast<object>(o, 0)
+  fieldAtOffset<object>(o, 0)
     = reinterpret_cast<object>
     (reinterpret_cast<intptr_alias_t>(value)
      | (reinterpret_cast<intptr_alias_t>
-        (cast<object>(o, 0)) & (~PointerMask)));
+        (fieldAtOffset<object>(o, 0)) & (~PointerMask)));
 }
 
 inline const char*
@@ -2152,9 +2152,9 @@ baseSize(Thread* t, object o, object class_)
 {
   assert(t, classFixedSize(t, class_) >= BytesPerWord);
 
-  return ceiling(classFixedSize(t, class_), BytesPerWord)
-    + ceiling(classArrayElementSize(t, class_)
-              * cast<uintptr_t>(o, classFixedSize(t, class_) - BytesPerWord),
+  return ceilingDivide(classFixedSize(t, class_), BytesPerWord)
+    + ceilingDivide(classArrayElementSize(t, class_)
+              * fieldAtOffset<uintptr_t>(o, classFixedSize(t, class_) - BytesPerWord),
               BytesPerWord);
 }
 
@@ -2293,7 +2293,7 @@ inline uintptr_t&
 extendedWord(Thread* t UNUSED, object o, unsigned baseSize)
 {
   assert(t, objectExtended(t, o));
-  return cast<uintptr_t>(o, baseSize * BytesPerWord);
+  return fieldAtOffset<uintptr_t>(o, baseSize * BytesPerWord);
 }
 
 inline unsigned
@@ -2795,7 +2795,7 @@ objectArrayLength(Thread* t UNUSED, object array)
 {
   assert(t, classFixedSize(t, objectClass(t, array)) == BytesPerWord * 2);
   assert(t, classArrayElementSize(t, objectClass(t, array)) == BytesPerWord);
-  return cast<uintptr_t>(array, BytesPerWord);
+  return fieldAtOffset<uintptr_t>(array, BytesPerWord);
 }
 
 inline object&
@@ -2806,7 +2806,7 @@ objectArrayBody(Thread* t UNUSED, object array, unsigned index)
   assert(t, classObjectMask(t, objectClass(t, array))
          == classObjectMask(t, arrayBody
                             (t, t->m->types, Machine::ArrayType)));
-  return cast<object>(array, ArrayBody + (index * BytesPerWord));
+  return fieldAtOffset<object>(array, ArrayBody + (index * BytesPerWord));
 }
 
 unsigned
@@ -2842,7 +2842,7 @@ inline bool
 atomicCompareAndSwapObject(Thread* t, object target, unsigned offset,
                            object old, object new_)
 {
-  if (atomicCompareAndSwap(&cast<uintptr_t>(target, offset),
+  if (atomicCompareAndSwap(&fieldAtOffset<uintptr_t>(target, offset),
                            reinterpret_cast<uintptr_t>(old),
                            reinterpret_cast<uintptr_t>(new_)))
   {
@@ -3352,7 +3352,7 @@ inline unsigned
 singletonMaskSize(unsigned count, unsigned bitsPerWord)
 {
   if (count) {
-    return ceiling(count + 2, bitsPerWord);
+    return ceilingDivide(count + 2, bitsPerWord);
   }
   return 0;
 }
@@ -3368,7 +3368,7 @@ singletonMaskSize(Thread* t, object singleton)
 {
   unsigned length = singletonLength(t, singleton);
   if (length) {
-    return ceiling(length + 2, BitsPerWord + 1);
+    return ceilingDivide(length + 2, BitsPerWord + 1);
   }
   return 0;
 }
@@ -3451,7 +3451,7 @@ singletonBit(Thread* t, object singleton, unsigned start, unsigned index)
 inline unsigned
 poolMaskSize(unsigned count, unsigned bitsPerWord)
 {
-  return ceiling(count, bitsPerWord);
+  return ceilingDivide(count, bitsPerWord);
 }
 
 inline unsigned
@@ -3463,7 +3463,7 @@ poolMaskSize(unsigned count)
 inline unsigned
 poolMaskSize(Thread* t, object pool)
 {
-  return ceiling(singletonCount(t, pool), BitsPerWord + 1);
+  return ceilingDivide(singletonCount(t, pool), BitsPerWord + 1);
 }
 
 inline unsigned
@@ -3476,7 +3476,7 @@ inline object
 resolveClassInObject(Thread* t, object loader, object container,
                      unsigned classOffset, bool throw_ = true)
 {
-  object o = cast<object>(container, classOffset);
+  object o = fieldAtOffset<object>(container, classOffset);
 
   loadMemoryBarrier();  
 
