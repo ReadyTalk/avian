@@ -1,0 +1,96 @@
+/* Copyright (c) 2008-2011, Avian Contributors
+
+   Permission to use, copy, modify, and/or distribute this software
+   for any purpose with or without fee is hereby granted, provided
+   that the above copyright notice and this permission notice appear
+   in all copies.
+
+   There is NO WARRANTY for this software.  See license.txt for
+   details. */
+
+#include <stdio.h>
+
+#include "common.h"
+#include "heap/heap.h"
+#include "system.h"
+#include "target.h"
+
+#include "codegen/assembler.h"
+#include "codegen/targets.h"
+#include "codegen/lir.h"
+
+#include "test-harness.h"
+
+
+using namespace avian::codegen;
+using namespace vm;
+
+class BasicEnv {
+public:
+  System* s;
+  Heap* heap;
+  Assembler::Architecture* arch;
+
+  BasicEnv():
+    s(makeSystem(0)),
+    heap(makeHeap(s, 32 * 1024)),
+    arch(makeArchitectureNative(s, true))
+  {
+    arch->acquire();
+  }
+
+  ~BasicEnv() {
+    arch->release();
+    s->dispose();
+  }
+};
+
+class Asm {
+public:
+  Zone zone;
+  Assembler* a;
+
+  Asm(BasicEnv& env):
+    zone(env.s, env.heap, 8192),
+    a(env.arch->makeAssembler(env.heap, &zone))
+  { }
+
+  ~Asm() {
+    a->dispose();
+  }
+};
+
+
+class BasicAssemblerTest : public Test {
+public:
+  BasicAssemblerTest():
+    Test("BasicAssembler")
+  {}
+
+  virtual void run() {
+    BasicEnv env;
+    Asm a(env);
+  }
+} basicAssemblerTest;
+
+class ArchitecturePlanTest : public Test {
+public:
+  ArchitecturePlanTest():
+    Test("ArchitecturePlan")
+  {}
+
+  virtual void run() {
+    BasicEnv env;
+
+    for(int op = (int)lir::Call; op < (int)lir::AlignedJump; op++) {
+      bool thunk;
+      uint8_t typeMask;
+      uint64_t registerMask;
+      env.arch->plan((lir::UnaryOperation)op, vm::TargetBytesPerWord, &typeMask, &registerMask, &thunk);
+      assertFalse(thunk);
+      assertNotEqual(static_cast<uint8_t>(0), typeMask);
+      assertNotEqual(static_cast<uint64_t>(0), registerMask);
+    }
+
+  }
+} architecturePlanTest;

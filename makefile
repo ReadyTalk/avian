@@ -64,6 +64,7 @@ test-build = $(build)/test
 src = src
 classpath-src = classpath
 test = test
+unittest = unittest
 win32 ?= $(root)/win32
 win64 ?= $(root)/win64
 winrt ?= $(root)/winrt
@@ -266,8 +267,23 @@ asm-output = -o $(1)
 asm-input = -c $(1)
 asm-format = S
 as = $(cc)
-ld = $(cxx)
+ld = $(cc)
 build-ld = $(build-cc)
+
+default-remote-test-host = localhost
+default-remote-test-port = 22
+ifeq ($(remote-test-host),)
+	remote-test-host = $(default-remote-test-host)
+else
+	remote-test = true
+endif
+ifeq ($(remote-test-port),)
+	remote-test-port = $(default-remote-test-port)
+else
+	remote-test = true
+endif
+remote-test-user = ${USER}
+remote-test-dir = /tmp/avian-test-${USER}
 
 static = -static
 shared = -shared
@@ -930,7 +946,7 @@ vm-sources = \
 	$(src)/finder.cpp \
 	$(src)/machine.cpp \
 	$(src)/util.cpp \
-	$(src)/heap.cpp \
+	$(src)/heap/heap.cpp \
 	$(src)/$(process).cpp \
 	$(src)/classpath-$(classpath).cpp \
 	$(src)/builtin.cpp \
@@ -950,31 +966,41 @@ embed-loader-objects = $(call cpp-objects,$(embed-loader-sources),$(src),$(build
 embed-sources = $(src)/embed.cpp
 embed-objects = $(call cpp-objects,$(embed-sources),$(src),$(build-embed))
 
+compiler-sources = \
+	$(src)/codegen/compiler.cpp \
+	$(src)/codegen/compiler/context.cpp \
+	$(src)/codegen/compiler/resource.cpp \
+	$(src)/codegen/compiler/site.cpp \
+	$(src)/codegen/compiler/regalloc.cpp \
+	$(src)/codegen/compiler/value.cpp \
+	$(src)/codegen/compiler/read.cpp \
+	$(src)/codegen/compiler/event.cpp \
+	$(src)/codegen/compiler/promise.cpp \
+	$(src)/codegen/compiler/frame.cpp \
+	$(src)/codegen/compiler/ir.cpp \
+	$(src)/codegen/registers.cpp \
+	$(src)/codegen/targets.cpp
+
+all-assembler-sources = \
+	$(src)/codegen/x86/assembler.cpp \
+	$(src)/codegen/arm/assembler.cpp \
+	$(src)/codegen/powerpc/assembler.cpp
+
+native-assembler-sources = \
+	$(src)/codegen/$(target-asm)/assembler.cpp
+
+all-codegen-target-sources = \
+	$(compiler-sources) \
+	$(native-assembler-sources)
+
 ifeq ($(process),compile)
-	vm-sources += \
-		$(src)/codegen/compiler.cpp \
-		$(src)/codegen/compiler/context.cpp \
-		$(src)/codegen/compiler/resource.cpp \
-		$(src)/codegen/compiler/site.cpp \
-		$(src)/codegen/compiler/regalloc.cpp \
-		$(src)/codegen/compiler/value.cpp \
-		$(src)/codegen/compiler/read.cpp \
-		$(src)/codegen/compiler/event.cpp \
-		$(src)/codegen/compiler/promise.cpp \
-		$(src)/codegen/compiler/frame.cpp \
-		$(src)/codegen/compiler/ir.cpp \
-		$(src)/codegen/registers.cpp \
-		$(src)/codegen/targets.cpp
+	vm-sources += $(compiler-sources)
 
 	ifeq ($(codegen-targets),native)
-		vm-sources += \
-			$(src)/codegen/$(target-asm)/assembler.cpp
+		vm-sources += $(native-assembler-sources)
 	endif
 	ifeq ($(codegen-targets),all)
-		vm-sources += \
-			$(src)/codegen/x86/assembler.cpp \
-			$(src)/codegen/arm/assembler.cpp \
-			$(src)/codegen/powerpc/assembler.cpp
+		vm-sources += $(all-assembler-sources)
 	endif
 
 	vm-asm-sources += $(src)/compile-$(asm).$(asm-format)
@@ -985,12 +1011,15 @@ ifeq ($(aot-only),true)
 endif
 
 vm-cpp-objects = $(call cpp-objects,$(vm-sources),$(src),$(build))
+all-codegen-target-objects = $(call cpp-objects,$(all-codegen-target-sources),$(src),$(build))
 vm-asm-objects = $(call asm-objects,$(vm-asm-sources),$(src),$(build))
 vm-objects = $(vm-cpp-objects) $(vm-asm-objects)
 
 heapwalk-sources = $(src)/heapwalk.cpp 
 heapwalk-objects = \
 	$(call cpp-objects,$(heapwalk-sources),$(src),$(build))
+
+unittest-objects = $(call cpp-objects,$(unittest-sources),$(unittest),$(build)/unittest/)
 
 ifeq ($(heapdump),true)
 	vm-sources += $(src)/heapdump.cpp
@@ -1119,6 +1148,8 @@ executable = $(build)/$(name)${exe-suffix}
 dynamic-library = $(build)/$(so-prefix)jvm$(so-suffix)
 executable-dynamic = $(build)/$(name)-dynamic$(exe-suffix)
 
+unittest-executable = $(build)/$(name)-unittest${exe-suffix}
+
 ifneq ($(classpath),avian)
 # Assembler, ConstantPool, and Stream are not technically needed for a
 # working build, but we include them since our Subroutine test uses
@@ -1175,6 +1206,13 @@ test-extra-sources = $(wildcard $(test)/extra/*.java)
 test-extra-classes = \
 	$(call java-classes,$(test-extra-sources),$(test),$(test-build))
 test-extra-dep = $(test-build)-extra.dep
+
+unittest-sources = \
+	$(wildcard $(unittest)/*.cpp) \
+	$(wildcard $(unittest)/codegen/*.cpp)
+
+unittest-depends = \
+	$(wildcard $(unittest)/*.h)
 
 ifeq ($(continuations),true)
 	continuation-tests = \
@@ -1251,11 +1289,14 @@ vg: build
 	$(library-path) $(vg) $(test-executable) $(test-args)
 
 .PHONY: test
-test: build
-	$(library-path) /bin/sh $(test)/test.sh 2>/dev/null \
-		$(test-executable) $(mode) "$(test-flags)" \
-		$(call class-names,$(test-build),$(filter-out $(test-support-classes), $(test-classes))) \
-		$(continuation-tests) $(tail-tests)
+test: build $(build)/run-tests.sh $(build)/test.sh $(unittest-executable)
+ifneq ($(remote-test),true)
+	/bin/sh $(build)/run-tests.sh
+else
+	@echo "running tests on $(remote-test-user)@$(remote-test-host):$(remote-test-port), in $(remote-test-dir)"
+	rsync $(build) -rav --exclude '*.o' --rsh="ssh -p$(remote-test-port)" $(remote-test-user)@$(remote-test-host):$(remote-test-dir)
+	ssh -p$(remote-test-port) $(remote-test-user)@$(remote-test-host) sh "$(remote-test-dir)/$(platform)-$(arch)$(options)/run-tests.sh"
+endif
 
 .PHONY: tarball
 tarball:
@@ -1285,6 +1326,16 @@ clean:
 ifeq ($(continuations),true)
 $(build)/compile-x86-asm.o: $(src)/continuations-x86.$(asm-format)
 endif
+
+$(build)/run-tests.sh: $(test-classes) makefile
+	echo 'cd $$(dirname $$0)' > $(@)
+	echo "sh ./test.sh 2>/dev/null \\" >> $(@)
+	echo "$(shell echo $(library-path) | sed 's|$(build)|\.|g') ./$(name)-unittest${exe-suffix} ./$(name)${exe-suffix} $(mode) \"-Djava.library.path=$$(pwd) -cp test\" \\" >> $(@)
+	echo "$(call class-names,$(test-build),$(filter-out $(test-support-classes), $(test-classes))) \\" >> $(@)
+	echo "$(continuation-tests) $(tail-tests)" >> $(@)
+
+$(build)/test.sh: $(test)/test.sh
+	cp $(<) $(@)
 
 gen-arg = $(shell echo $(1) | sed -e 's:$(build)/type-\(.*\)\.cpp:\1:')
 $(generated-code): %.cpp: $(src)/types.def $(generator) $(classpath-dep)
@@ -1338,8 +1389,22 @@ define compile-asm-object
 	$(as) $(asmflags) $(call asm-output,$(@)) $(call asm-input,$(<))
 endef
 
+define compile-unittest-object
+	@echo "compiling $(@)"
+	@mkdir -p $(dir $(@))
+	$(cxx) $(cflags) -c $$($(windows-path) -I$(unittest) $(<)) $(call output,$(@))
+endef
+
 $(vm-cpp-objects): $(build)/%.o: $(src)/%.cpp $(vm-depends)
 	$(compile-object)
+
+ifeq ($(process),interpret)
+$(all-codegen-target-objects): $(build)/%.o: $(src)/%.cpp $(vm-depends)
+	$(compile-object)
+endif
+
+$(unittest-objects): $(build)/unittest/%.o: $(unittest)/%.cpp $(vm-depends) $(unittest-depends)
+	$(compile-unittest-object)
 
 $(test-cpp-objects): $(test-build)/%.o: $(test)/%.cpp $(vm-depends)
 	$(compile-object)
@@ -1513,6 +1578,12 @@ executable-objects = $(vm-objects) $(classpath-objects) $(driver-object) \
 	$(vm-heapwalk-objects) $(boot-object) $(vm-classpath-objects) \
 	$(javahome-object) $(boot-javahome-object) $(lzma-decode-objects)
 
+unittest-executable-objects = $(unittest-objects) $(vm-objects)
+
+ifeq ($(process),interpret)
+	unittest-executable-objects += $(all-codegen-target-objects)
+endif
+
 $(executable): $(executable-objects)
 	@echo "linking $(@)"
 ifeq ($(platform),windows)
@@ -1531,6 +1602,25 @@ else
 	$(ld) $(executable-objects) $(rdynamic) $(lflags) $(bootimage-lflags) -o $(@)
 endif
 	$(strip) $(strip-all) $(@)
+
+
+$(unittest-executable): $(unittest-executable-objects)
+	@echo "linking $(@)"
+ifeq ($(platform),windows)
+ifdef ms_cl_compiler
+	$(ld) $(lflags) $(unittest-executable-objects) -out:$(@) \
+		-debug -PDB:$(subst $(exe-suffix),.pdb,$(@)) $(manifest-flags)
+ifdef mt
+	$(mt) -nologo -manifest $(@).manifest -outputresource:"$(@);1"
+endif
+else
+	$(dlltool) -z $(@).def $(unittest-executable-objects)
+	$(dlltool) -d $(@).def -e $(@).exp
+	$(ld) $(@).exp $(unittest-executable-objects) $(lflags) -o $(@)
+endif
+else
+	$(ld) $(unittest-executable-objects) $(rdynamic) $(lflags) $(bootimage-lflags) -o $(@)
+endif
 
 $(bootimage-generator): $(bootimage-generator-objects)
 	echo building $(bootimage-generator) arch=$(build-arch) platform=$(bootimage-platform)
