@@ -20,6 +20,8 @@
 #include "binaryToObject/tools.h"
 #include "lzma.h"
 
+#include "util/abort.h"
+
 // since we aren't linking against libstdc++, we must implement this
 // ourselves:
 extern "C" void __cxa_pure_virtual(void) { abort(); }
@@ -289,7 +291,7 @@ makeCodeImage(Thread* t, Zone* zone, BootImage* image, uint8_t* code,
   object methods = 0;
   PROTECT(t, methods);
 
-  DelayedPromise* addresses = 0;
+  avian::codegen::DelayedPromise* addresses = 0;
 
   class MyOffsetResolver: public OffsetResolver {
    public:
@@ -673,7 +675,7 @@ makeCodeImage(Thread* t, Zone* zone, BootImage* image, uint8_t* code,
       address = codeCompiled(t, methodCode(t, method));
     }
 
-    static_cast<ListenPromise*>(pointerValue(t, tripleSecond(t, calls)))
+    static_cast<avian::codegen::ListenPromise*>(pointerValue(t, tripleSecond(t, calls)))
       ->listener->resolve(address, 0);
   }
 
@@ -1254,7 +1256,7 @@ updateConstants(Thread* t, object constants, HeapMap* heapTable)
     unsigned target = heapTable->find(tripleFirst(t, constants));
     expect(t, target > 0);
 
-    for (Promise::Listener* pl = static_cast<ListenPromise*>
+    for (avian::codegen::Promise::Listener* pl = static_cast<avian::codegen::ListenPromise*>
            (pointerValue(t, tripleSecond(t, constants)))->listener;
          pl; pl = pl->next)
     {
