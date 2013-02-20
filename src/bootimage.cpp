@@ -8,16 +8,16 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
-#include "heap/heap.h"
+#include <avian/vm/heap/heap.h>
 #include "heapwalk.h"
 #include "common.h"
 #include "machine.h"
 #include "util.h"
 #include "stream.h"
-#include "codegen/assembler.h"
-#include "codegen/promise.h"
+#include <avian/vm/codegen/assembler.h>
+#include <avian/vm/codegen/promise.h>
 #include "target.h"
-#include "binaryToObject/tools.h"
+#include <avian/tools/object-writer/tools.h>
 #include "lzma.h"
 
 // since we aren't linking against libstdc++, we must implement this
