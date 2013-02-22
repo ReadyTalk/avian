@@ -943,7 +943,7 @@ vm-depends := $(generated-code) \
 	$(shell find src include -name '*.h' -or -name '*.inc.cpp')
 
 vm-sources = \
-	$(src)/$(system).cpp \
+	$(src)/vm/system/$(system).cpp \
 	$(src)/finder.cpp \
 	$(src)/machine.cpp \
 	$(src)/util.cpp \
@@ -1037,7 +1037,7 @@ ifeq ($(continuations),true)
 	asmflags += -DAVIAN_CONTINUATIONS
 endif
 
-bootimage-generator-sources = $(src)/bootimage.cpp
+bootimage-generator-sources = $(src)/tools/bootimage-generator/main.cpp
 ifneq ($(lzma),)
 	bootimage-generator-sources += $(src)/lzma-encode.cpp
 endif
@@ -1072,8 +1072,8 @@ boot-object = $(build)/boot.o
 
 generator-depends := $(wildcard $(src)/*.h)
 generator-sources = \
-	$(src)/type-generator.cpp \
-	$(src)/$(build-system).cpp \
+	$(src)/tools/type-generator/main.cpp \
+	$(src)/vm/system/$(build-system).cpp \
 	$(src)/finder.cpp
 
 ifneq ($(lzma),)
