@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env dash
 ECLIPSEMAJORVER=4; DROP=S-4.4M3-201310302000; ECJVER=4.4M3; LZMASDKVER=922
 JDKREL=7u45; JDKBLD=b18; SRCREL=7u40; SRCBLD=b43; SRCDATE=26_aug_2013
 
@@ -53,17 +53,17 @@ if [ x"$CXX" = x"" ];       then export CXX=g++;                              fi
 if [ x"$CFLAGS" = x"" ];    then export CFLAGS='-O3 -fPIC -g0 -w -DNDEBUG';   fi
 if [ x"$CXXFLAGS" = x"" ];  then export CXXFLAGS='-O3 -fPIC -g0 -w -DNDEBUG'; fi
 if [ x"$LDFLAGS" = x"" ];   then export LDFLAGS='-L/usr/local/lib';           fi
-if [ x"$MAKEFLAGS" = x"" ]; then export MAKEFLAGS+='-j3';                     fi
+if [ x"$MAKEFLAGS" = x"" ]; then export MAKEFLAGS="-j3";                      fi
 
 if [ $(uname) = Darwin ]; then
   if [ x"$CC" = x"gcc" ];   then export CC=clang;                             fi
   if [ x"$CXX" = x"g++" ];  then export CXX=clang++;                          fi
 
-  export CFLAGS+=' -flto -fgnu-keywords'
-  export CXXFLAGS+=' -flto -fgnu-keywords -stdlib=libc++'
-  export LDFLAGS+=' -Wl,-S,-x,-w,-dead_strip,-dead_strip_dylibs'
-  export LDFLAGS+=' -Wl,-no_version_load_command,-search_paths_first'
-  export LDFLAGS+=' -Wl,-no_eh_labels,-export_dynamic'
+  export CFLAGS="$CFLAGS -flto -fgnu-keywords"
+  export CXXFLAGS="$CXXFLAGS -flto -fgnu-keywords -stdlib=libc++"
+  export LDFLAGS="$LDFLAGS -Wl,-S,-x,-w,-dead_strip,-dead_strip_dylibs"
+  export LDFLAGS="$LDFLAGS -Wl,-no_version_load_command,-search_paths_first"
+  export LDFLAGS="$LDFLAGS -Wl,-no_eh_labels,-export_dynamic"
 fi ;}
 
 darwing3ltobug(){ if [ $(uname) = Darwin ]; then cd $HUR; rm -rf makefile.bak;
@@ -144,7 +144,7 @@ if [ $(uname) = Darwin ]; then
   ld -r -arch x86_64 $(find cxx -name $obj) -o cxx/libc++abi/$obj 
   rm -rf cxx/libc++/$obj; done; ar rc libc++.a $(find cxx -name '*.o')
   rm -rf cxx libc++ libc++abi
-  export LDFLAGS+=" -L$HUR/android -stdlib=libc++ -lc++ -w"
+  export LDFLAGS="$LDFLAGS -L$HUR/android -stdlib=libc++ -lc++ -w"
 fi
 
 echo 'Building android class library supporting libraries...'
@@ -165,8 +165,8 @@ echo 'H4sICLTKcVICA2ljdXBhdGNoAPPMS0mtsFJIzs/Nzc/TL80tLUmt0MvgsqUccOnq
 cd ../..
 
 cd openssl-upstream
-export CFLAGS+=' -fno-lto'
-export MAKEFLAGS+=' -j1'
+export CFLAGS="$CFLAGS -fno-lto"
+export MAKEFLAGS="$MAKEFLAGS -j1"
 
 for x in progs handshake_cutthrough jsse channelid eng_dyn_dirs \
   fix_clang_build tls12_digests alpn; do
