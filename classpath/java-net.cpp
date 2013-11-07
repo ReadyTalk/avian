@@ -8,147 +8,77 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
+#include "avian/machine.h"
 
-#include "jni.h"
-#include "jni-util.h"
+#include "sockets.h"
 
-#ifdef PLATFORM_WINDOWS
-#  include <winsock2.h>
+/*#include "avian/constants.h"
+#include "avian/processor.h"
+#include "avian/util.h"*/
 
-#  define ONLY_ON_WINDOWS(x)	x
-#else
-#  include <netdb.h>
-#  include <sys/socket.h>
-#  include <netinet/in.h>
-#  include <unistd.h>
-
-#  define ONLY_ON_WINDOWS(x)
-#  define SOCKET				int
-#  define INVALID_SOCKET		-1
-#  define SOCKET_ERROR			-1
-#  define closesocket(x)		close(x)
-#endif
-
-int last_socket_error() {
-#ifdef PLATFORM_WINDOWS
-		int error = WSAGetLastError();
-#else
-		int error = errno;
-#endif
-		return error;
-}
+using namespace sockets;
 
 extern "C" JNIEXPORT void JNICALL
-Java_java_net_Socket_init(JNIEnv* ONLY_ON_WINDOWS(e), jclass)
-{
-#ifdef PLATFORM_WINDOWS
-  static bool wsaInitialized = false;
-  if (not wsaInitialized) {
-    WSADATA data;
-    int r = WSAStartup(MAKEWORD(2, 2), &data);
-    if (r or LOBYTE(data.wVersion) != 2 or HIBYTE(data.wVersion) != 2) {
-      throwNew(e, "java/io/IOException", "WSAStartup failed");
-    } else {
-      wsaInitialized = true;
-    }
-  }
-#endif
+Java_java_net_Socket_init(JNIEnv* e, jclass) {
+	init(e);
 }
 
 extern "C" JNIEXPORT SOCKET JNICALL
 Java_java_net_Socket_create(JNIEnv* e, jclass) {
-	SOCKET sock;
-	if (INVALID_SOCKET == (sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))) {
-		char buf[255];
-		sprintf(buf, "Can't create a socket. System error: %d", last_socket_error());
-		throwNew(e, "java/io/IOException", buf);
-		return 0;	// This doesn't matter cause we have risen an exception
-	}
-	return sock;
+	return create(e);
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_java_net_Socket_connect(JNIEnv* e, jclass, SOCKET sock, long addr, short port) {
-	sockaddr_in adr;
-	adr.sin_family = AF_INET;
-#ifdef PLATFORM_WINDOWS
-	adr.sin_addr.S_un.S_addr = htonl(addr);
-#else
-	adr.sin_addr.s_addr = htonl(addr);
-#endif
-	adr.sin_port = htons (port);
-
-	if (SOCKET_ERROR == connect(sock, (sockaddr* )&adr, sizeof(adr)))
-	{
-		char buf[255];
-		sprintf(buf, "Can't connect a socket. System error: %d", last_socket_error());
-		throwNew(e, "java/io/IOException", buf);
-		return;
-	}
+	connect(e, sock, addr, port);
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_java_net_Socket_bind(JNIEnv* e, jclass, SOCKET sock, long addr, short port) {
-	sockaddr_in adr;
-	adr.sin_family = AF_INET;
-#ifdef PLATFORM_WINDOWS
-	adr.sin_addr.S_un.S_addr = htonl(addr);
-#else
-	adr.sin_addr.s_addr = htonl(addr);
-#endif
-	adr.sin_port = htons (port);
-
-	if (SOCKET_ERROR == bind(sock, (sockaddr* )&adr, sizeof(adr)))
-	{
-		char buf[255];
-		sprintf(buf, "Can't bind a socket. System error: %d", last_socket_error());
-		throwNew(e, "java/io/IOException", buf);
-		return;
-	}
-}
-
-
-extern "C" JNIEXPORT void JNICALL
-Java_java_net_Socket_send(JNIEnv* e, jclass, SOCKET sock, const char* buff_ptr, int buff_size) {
-	if (SOCKET_ERROR == send(sock, buff_ptr, buff_size, 0)) {
-		char buf[255];
-		sprintf(buf, "Can't send data through the socket. System error: %d", last_socket_error());
-		throwNew(e, "java/io/IOException", buf);
-		return;
-	}
-}
-
-extern "C" JNIEXPORT int JNICALL
-Java_java_net_Socket_recv(JNIEnv* e, jclass, SOCKET sock, char* buff_ptr, int buff_size) {
-	int length = recv(sock, buff_ptr, buff_size, 0);
-	if (SOCKET_ERROR == length) {
-		char buf[255];
-		sprintf(buf, "Can't receive data through the socket. System error: %d", last_socket_error());
-		throwNew(e, "java/io/IOException", buf);
-		return 0;	// This doesn't matter cause we have risen an exception
-	}
-	return length;
+	bind(e, sock, addr, port);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_java_net_Socket_closeAbortive(JNIEnv* e, jclass, SOCKET sock) {
-	if (SOCKET_ERROR == closesocket(sock)) {
-		char buf[255];
-		sprintf(buf, "Can't close the socket. System error: %d", last_socket_error());
-		throwNew(e, "java/io/IOException", buf);
-	}
+Avian_java_net_Socket_send(vm::Thread* t, vm::object, uintptr_t* arguments) {		/* SOCKET s, object buffer_obj, int start_pos, int count  */
+	SOCKET s = reinterpret_cast<SOCKET>(arguments[0]);
+	vm::object buffer_obj = reinterpret_cast<vm::object>(arguments[2]);
+	int32_t start_pos = *(int32_t*)(&arguments[3]);
+	int32_t count = *(int32_t*)(&arguments[4]);
+	char* buffer = reinterpret_cast<char*>(&vm::byteArrayBody(t, buffer_obj, start_pos));
+	send((JNIEnv*)t, s, buffer, count);
+}
+
+extern "C" JNIEXPORT int64_t JNICALL
+Avian_java_net_Socket_recv(vm::Thread* t, vm::object, uintptr_t* arguments) {		/* SOCKET s, object buffer_obj, int start_pos, int count  */
+	SOCKET s = reinterpret_cast<SOCKET>(arguments[0]);
+	vm::object buffer_obj = reinterpret_cast<vm::object>(arguments[2]);
+	int32_t start_pos = *(int32_t*)(&arguments[3]);
+	int32_t count = *(int32_t*)(&arguments[4]);
+	char* buffer = reinterpret_cast<char*>(&vm::byteArrayBody(t, buffer_obj, start_pos));
+	return recv((JNIEnv*)t, s, buffer, count);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_java_net_Socket_closeGraceful(JNIEnv* e, jclass, SOCKET sock, int how) {
-	if (SOCKET_ERROR == shutdown(sock, how)) {
-		char buf[255];
-		sprintf(buf, "Can't shutdown the socket. System error: %d", last_socket_error());
-		throwNew(e, "java/io/IOException", buf);
-	}
+Java_java_net_Socket_abort(JNIEnv* e, jclass, SOCKET sock) {
+	abort(e, sock);
 }
 
-extern "C" JNIEXPORT char* JNICALL
+extern "C" JNIEXPORT void JNICALL
+Java_java_net_Socket_close(JNIEnv* e, jclass, SOCKET sock) {
+	close(e, sock);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_java_net_Socket_closeOutput(JNIEnv* e, jclass, SOCKET sock) {
+	close_output(e, sock);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_java_net_Socket_closeInput(JNIEnv* e, jclass, SOCKET sock) {
+	close_input(e, sock);
+}
+
+/*extern "C" JNIEXPORT char* JNICALL
 Java_java_net_Socket_allocateBuffer(JNIEnv*, jclass, int buf_size) {
 	return (char*)malloc(buf_size);
 }
@@ -179,7 +109,7 @@ Java_java_net_Socket_copyBufferToNative(JNIEnv* e, jclass, jbyteArray source, in
 	jbyte* sourceElements = e->GetByteArrayElements(source, NULL);
 	memcpy(target, sourceElements + start_pos, target_size);
 	e->ReleaseByteArrayElements(source, sourceElements, JNI_ABORT);
-}
+}*/
 
 
 extern "C" JNIEXPORT jint JNICALL

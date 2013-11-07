@@ -47,31 +47,23 @@ public class Socket implements Closeable, AutoCloseable {
 	private static native void connect(/* SOCKET */long sock, long addr, short port) throws IOException;
 	private static native void bind(/* SOCKET */long sock, long addr, short port) throws IOException;
 
-	private static native void send(/* SOCKET */long sock, /* char* */long buff_ptr, int buff_size) throws IOException;
-	private static native int recv(/* SOCKET */long sock, /* char* */long buff_ptr, int buff_size) throws IOException;
+	private static native void send(/* SOCKET */long sock, byte[] buffer, int start_pos, int count) throws IOException;
+	private static native int recv(/* SOCKET */long sock, byte[] buffer, int start_pos, int count) throws IOException;
 	
-	private static native void closeAbortive(/* SOCKET */long sock);
-	private static native void closeGraceful(/* SOCKET */long sock, int how);
-	
-	private static native /* char* */long allocateBuffer(int buf_size);
-	private static native void freeBuffer(/* char* */long buf_ptr);
-	private static native void copyBufferFromNative(long source_ptr, int source_size, byte[] target, int start_pos);
-	private static native void copyBufferToNative(byte[] source, int start_pos, int target_size, long target);
+	private static native void abort(/* SOCKET */long sock);
+	private static native void close(/* SOCKET */long sock);
+	private static native void closeOutput(/* SOCKET */long sock);
+	private static native void closeInput(/* SOCKET */long sock);
 	
 	private class SocketInputStream extends InputStream {
 
-		private long buf_ptr;
-		
-		public SocketInputStream() {
-			buf_ptr = allocateBuffer(BUFFER_SIZE);
-		}
+		private boolean closed = false;
 		
 		@Override
 		public void close() throws IOException {
-			if (buf_ptr != 0) {
-				closeGraceful(sock, SD_RECEIVE);
-				freeBuffer(buf_ptr);
-				buf_ptr = 0;
+			if (!closed) {
+				closeInput(sock);
+				closed = true;
 			}
 			super.close();
 		}
@@ -84,13 +76,12 @@ public class Socket implements Closeable, AutoCloseable {
 		
 		@Override
 		public int read() throws IOException {
-			int size = recv(sock, buf_ptr, 1);
+			byte[] buffer = new byte[1];
+			int size = recv(sock, buffer, 0, 1);
 			if (size == 0) {
 				return -1;
 			}
-			byte[] res = new byte[1];
-			copyBufferFromNative(buf_ptr, 1, res, 0);
-			return res[0];
+			return buffer[0];
 		}
 		
 		@Override
@@ -99,9 +90,8 @@ public class Socket implements Closeable, AutoCloseable {
 			int index = 0;
 			int size;
 			do {
-				size = recv(sock, buf_ptr, Math.min(fullSize, Socket.BUFFER_SIZE));
+				size = recv(sock, buffer, index, Math.min(fullSize, Socket.BUFFER_SIZE));
 				fullSize -= size;
-				copyBufferFromNative(buf_ptr, size, buffer, index);
 				index += size;
 			} while (fullSize != 0 && size != 0);
 			return index;
@@ -112,18 +102,13 @@ public class Socket implements Closeable, AutoCloseable {
 	
 	private class SocketOutputStream extends OutputStream {
 
-		private long buf_ptr;
-		
-		public SocketOutputStream() {
-			buf_ptr = allocateBuffer(BUFFER_SIZE);
-		}
+		private boolean closed = false;
 		
 		@Override
 		public void close() throws IOException {
-			if (buf_ptr != 0) {
-				closeGraceful(sock, SD_SEND);
-				freeBuffer(buf_ptr);
-				buf_ptr = 0;
+			if (!closed) {
+				closeOutput(sock);
+				closed = true;
 			}
 			super.close();
 		}
@@ -138,8 +123,7 @@ public class Socket implements Closeable, AutoCloseable {
 		public void write(int c) throws IOException {
 			byte[] res = new byte[1];
 			res[0] = (byte)c;
-			copyBufferToNative(res, 0, 1, buf_ptr);
-			send(sock, buf_ptr, 1);
+			send(sock, res, 0, 1);
 		}
 		
 		@Override
@@ -149,8 +133,7 @@ public class Socket implements Closeable, AutoCloseable {
 			int size;
 			do {
 				size = Math.min(fullSize, Socket.BUFFER_SIZE);
-				copyBufferToNative(buffer, index, size, buf_ptr);
-				send(sock, buf_ptr, size);
+				send(sock, buffer, index, size);
 				fullSize -= size;
 				index += size;
 			} while (fullSize != 0 && size != 0);
@@ -197,7 +180,7 @@ public class Socket implements Closeable, AutoCloseable {
 
 	@Override
 	public void close() throws IOException {
-		closeGraceful(sock, SD_BOTH);
+		close(sock);
 	}
 	
 	public void shutdownInput() throws IOException {
