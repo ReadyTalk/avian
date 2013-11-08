@@ -8,11 +8,8 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
-
-#include "avian/machine.h"
-
 #include "jni.h"
-#include "jni-util.h"
+#include "avian/machine.h"
 
 #include "sockets.h"
 

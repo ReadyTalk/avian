@@ -17,9 +17,6 @@
 #ifndef SOCKETS_H_
 #define SOCKETS_H_
 
-#include "jni.h"
-#include "jni-util.h"
-
 #ifdef PLATFORM_WINDOWS
 #  include <winsock2.h>
 
