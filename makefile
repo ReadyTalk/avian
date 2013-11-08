@@ -474,8 +474,7 @@ endif
 
 ifeq ($(build-platform),darwin)
 	build-cflags = $(common-cflags) -fPIC -fvisibility=hidden -I$(src)
-	cflags += -I/System/Library/Frameworks/JavaVM.framework/Headers/ \
-		-Wno-deprecated-declarations
+	cflags += -Wno-deprecated-declarations
 	build-lflags += -framework CoreFoundation
 endif
 
@@ -691,6 +690,8 @@ ifeq ($(platform),darwin)
 		asmflags += -arch x86_64
 		lflags += -arch x86_64
 	endif
+
+	cflags += -I$(JAVA_HOME)/include/darwin
 endif
 
 openjdk-extra-cflags += $(classpath-extra-cflags)
@@ -1300,6 +1301,7 @@ ifneq ($(classpath),avian)
 		$(classpath-src)/avian/Callback.java \
 		$(classpath-src)/avian/CallbackReceiver.java \
 		$(classpath-src)/avian/ClassAddendum.java \
+		$(classpath-src)/avian/InnerClassReference.java \
 		$(classpath-src)/avian/Classes.java \
 		$(classpath-src)/avian/ConstantPool.java \
 		$(classpath-src)/avian/Continuations.java \
@@ -1486,12 +1488,19 @@ ifeq ($(continuations),true)
 $(build)/compile-x86-asm.o: $(src)/continuations-x86.$(asm-format)
 endif
 
-$(build)/run-tests.sh: $(test-classes) makefile
+$(build)/run-tests.sh: $(test-classes) makefile $(build)/extra-dir/multi-classpath-test.txt $(build)/test/multi-classpath-test.txt
 	echo 'cd $$(dirname $$0)' > $(@)
 	echo "sh ./test.sh 2>/dev/null \\" >> $(@)
-	echo "$(shell echo $(library-path) | sed 's|$(build)|\.|g') ./$(name)-unittest${exe-suffix} ./$(notdir $(test-executable)) $(mode) \"-Djava.library.path=. -cp test\" \\" >> $(@)
+	echo "$(shell echo $(library-path) | sed 's|$(build)|\.|g') ./$(name)-unittest${exe-suffix} ./$(notdir $(test-executable)) $(mode) \"-Djava.library.path=. -cp test:extra-dir\" \\" >> $(@)
 	echo "$(call class-names,$(test-build),$(filter-out $(test-support-classes), $(test-classes))) \\" >> $(@)
 	echo "$(continuation-tests) $(tail-tests)" >> $(@)
+
+$(build)/extra-dir/multi-classpath-test.txt:
+	mkdir -p $(build)/extra-dir
+	echo "$@" > $@
+
+$(build)/test/multi-classpath-test.txt:
+	echo "$@" > $@
 
 $(build)/test.sh: $(test)/test.sh
 	cp $(<) $(@)

@@ -10,6 +10,8 @@
 
 package java.util;
 
+import java.lang.reflect.Array;
+
 public class Arrays {
   private Arrays() { }
 
@@ -148,8 +150,100 @@ public class Arrays {
       });
   }
 
+  private final static int SORT_SIZE_THRESHOLD = 16;
+
   public static <T> void sort(T[] array, Comparator<? super T> comparator) {
-    // insertion sort
+    introSort(array, comparator, 0, array.length, array.length);
+    insertionSort(array, comparator);
+  }
+
+  private static <T > void introSort(T[] array,
+    Comparator<? super T> comparator, int begin, int end, int limit)
+  {
+    while (end - begin > SORT_SIZE_THRESHOLD) {
+      if (limit == 0) {
+        heapSort(array, comparator, begin, end);
+        return;
+      }
+      limit >>= 1;
+
+      // median of three
+      T a = array[begin];
+      T b = array[begin + (end - begin) / 2 + 1];
+      T c = array[end - 1];
+      T median;
+      if (comparator.compare(a, b) < 0) {
+        median = comparator.compare(b, c) < 0 ?
+          b : (comparator.compare(a, c) < 0 ? c : a);
+      } else {
+        median = comparator.compare(b, c) > 0 ?
+          b : (comparator.compare(a, c) > 0 ? c : a);
+      }
+
+      // partition
+      int pivot, i = begin, j = end;
+      for (;;) {
+        while (comparator.compare(array[i], median) < 0) {
+          ++i;
+        }
+        --j;
+        while (comparator.compare(median, array[j]) < 0) {
+          --j;
+        }
+        if (i >= j) {
+          pivot = i;
+          break;
+        }
+        T swap = array[i];
+        array[i] = array[j];
+        array[j] = swap;
+        ++i;
+      }
+
+      introSort(array, comparator, pivot, end, limit);
+      end = pivot;
+    }
+  }
+
+  private static <T> void heapSort(T[] array, Comparator<? super T> comparator,
+    int begin, int end)
+  {
+    int count = end - begin;
+    for (int i = count / 2 - 1; i >= 0; --i) {
+      siftDown(array, comparator, i, count, begin);
+    }
+    for (int i = count - 1; i > 0; --i) {
+      // swap begin and begin + i
+      T swap = array[begin + i];
+      array[begin + i] = array[begin];
+      array[begin] = swap;
+
+      siftDown(array, comparator, 0, i, begin);
+    }
+  }
+
+  private static <T> void siftDown(T[] array, Comparator<? super T> comparator,
+    int i, int count, int offset)
+  {
+    T value = array[offset + i];
+    while (i < count / 2) {
+      int child = 2 * i + 1;
+      if (child + 1 < count &&
+          comparator.compare(array[child], array[child + 1]) < 0) {
+        ++child;
+      }
+      if (comparator.compare(value, array[child]) >= 0) {
+        break;
+      }
+      array[offset + i] = array[offset + child];
+      i = child;
+    }
+    array[offset + i] = value;
+  }
+
+  private static <T> void insertionSort(T[] array,
+    Comparator<? super T> comparator)
+  {
     for (int j = 1; j < array.length; ++j) {
       T t = array[j];
       int i = j - 1;
@@ -249,11 +343,119 @@ public class Arrays {
       array[i] = value;
     }
   }
-  
+
+  public static void fill(short[] array, short value) {
+    for (int i=0;i<array.length;i++) {
+      array[i] = value;
+    }
+  }
+
+  public static void fill(byte[] array, byte value) {
+    for (int i=0;i<array.length;i++) {
+      array[i] = value;
+    }
+  }
+
+  public static void fill(boolean[] array, boolean value) {
+    for (int i=0;i<array.length;i++) {
+      array[i] = value;
+    }
+  }
+
+  public static void fill(long[] array, long value) {
+    for (int i=0;i<array.length;i++) {
+      array[i] = value;
+    }
+  }
+
+   public static void fill(float[] array, float value) {
+    for (int i=0;i<array.length;i++) {
+      array[i] = value;
+    }
+  }
+
+ public static void fill(double[] array, double value) {
+    for (int i=0;i<array.length;i++) {
+      array[i] = value;
+    }
+  }
+
   public static <T> void fill(T[] array, T value) {
     for (int i=0;i<array.length;i++) {
       array[i] = value;
     }
   }
 
+  public static boolean[] copyOf(boolean[] array, int newLength) {
+    boolean[] result = new boolean[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static byte[] copyOf(byte[] array, int newLength) {
+    byte[] result = new byte[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static char[] copyOf(char[] array, int newLength) {
+    char[] result = new char[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static double[] copyOf(double[] array, int newLength) {
+    double[] result = new double[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static float[] copyOf(float[] array, int newLength) {
+    float[] result = new float[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static int[] copyOf(int[] array, int newLength) {
+    int[] result = new int[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static long[] copyOf(long[] array, int newLength) {
+    long[] result = new long[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static short[] copyOf(short[] array, int newLength) {
+    short[] result = new short[newLength];
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static <T> T[] copyOf(T[] array, int newLength) {
+    Class<?> clazz = array.getClass().getComponentType();
+    T[] result = (T[])Array.newInstance(clazz, newLength);
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
+
+  public static <T, U> T[] copyOf(U[] array, int newLength,
+    Class<? extends T[]> newType)
+  {
+    T[] result = (T[])Array.newInstance(newType.getComponentType(), newLength);
+    int length = array.length > newLength ? newLength : array.length;
+    System.arraycopy(array, 0, result, 0, length);
+    return result;
+  }
 }

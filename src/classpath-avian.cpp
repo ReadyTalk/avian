@@ -53,7 +53,7 @@ class MyClasspath : public Classpath {
 
     return vm::makeThread
       (t, 0, 0, 0, 0, NewState, NormalPriority, 0, 0, 0,
-       root(t, Machine::BootLoader), 0, 0, group, 0);
+       root(t, Machine::AppLoader), 0, 0, group, 0);
   }
 
   virtual object
@@ -305,6 +305,13 @@ Avian_java_io_ObjectInputStream_makeInstance
   object c = reinterpret_cast<object>(arguments[0]);
 
   return reinterpret_cast<int64_t>(make(t, c));
+}
+
+extern "C" JNIEXPORT int64_t JNICALL
+Avian_avian_LegacyObjectInputStream_makeInstance
+(Thread* t, object, uintptr_t* arguments)
+{
+  return Avian_java_io_ObjectInputStream_makeInstance(t, NULL, arguments);
 }
 
 extern "C" JNIEXPORT int64_t JNICALL

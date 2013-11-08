@@ -8,15 +8,11 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
-package java.lang;
+package avian;
 
-import java.io.Serializable;
-
-public abstract class Number implements Serializable {
-  public abstract byte byteValue();
-  public abstract short shortValue();
-  public abstract int intValue();
-  public abstract long longValue();
-  public abstract float floatValue();
-  public abstract double doubleValue();
+public class InnerClassReference {
+  public byte[] inner;
+  public byte[] outer;
+  public byte[] name;
+  public short flags;
 }
