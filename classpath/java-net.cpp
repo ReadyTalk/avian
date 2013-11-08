@@ -8,15 +8,14 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
-#include "avian/machine.h"
+#include "jni.h"
+#include "jni-util.h"
 
 #include "sockets.h"
 
-/*#include "avian/constants.h"
-#include "avian/processor.h"
-#include "avian/util.h"*/
+#include "avian/machine.h"
 
-using namespace sockets;
+using namespace avian::classpath::sockets;
 
 extern "C" JNIEXPORT void JNICALL
 Java_java_net_Socket_init(JNIEnv* e, jclass) {
@@ -39,26 +38,6 @@ Java_java_net_Socket_bind(JNIEnv* e, jclass, SOCKET sock, long addr, short port)
 }
 
 extern "C" JNIEXPORT void JNICALL
-Avian_java_net_Socket_send(vm::Thread* t, vm::object, uintptr_t* arguments) {		/* SOCKET s, object buffer_obj, int start_pos, int count  */
-	SOCKET s = reinterpret_cast<SOCKET>(arguments[0]);
-	vm::object buffer_obj = reinterpret_cast<vm::object>(arguments[2]);
-	int32_t start_pos = *(int32_t*)(&arguments[3]);
-	int32_t count = *(int32_t*)(&arguments[4]);
-	char* buffer = reinterpret_cast<char*>(&vm::byteArrayBody(t, buffer_obj, start_pos));
-	send((JNIEnv*)t, s, buffer, count);
-}
-
-extern "C" JNIEXPORT int64_t JNICALL
-Avian_java_net_Socket_recv(vm::Thread* t, vm::object, uintptr_t* arguments) {		/* SOCKET s, object buffer_obj, int start_pos, int count  */
-	SOCKET s = reinterpret_cast<SOCKET>(arguments[0]);
-	vm::object buffer_obj = reinterpret_cast<vm::object>(arguments[2]);
-	int32_t start_pos = *(int32_t*)(&arguments[3]);
-	int32_t count = *(int32_t*)(&arguments[4]);
-	char* buffer = reinterpret_cast<char*>(&vm::byteArrayBody(t, buffer_obj, start_pos));
-	return recv((JNIEnv*)t, s, buffer, count);
-}
-
-extern "C" JNIEXPORT void JNICALL
 Java_java_net_Socket_abort(JNIEnv* e, jclass, SOCKET sock) {
 	abort(e, sock);
 }
@@ -78,39 +57,25 @@ Java_java_net_Socket_closeInput(JNIEnv* e, jclass, SOCKET sock) {
 	close_input(e, sock);
 }
 
-/*extern "C" JNIEXPORT char* JNICALL
-Java_java_net_Socket_allocateBuffer(JNIEnv*, jclass, int buf_size) {
-	return (char*)malloc(buf_size);
+extern "C" JNIEXPORT void JNICALL
+Avian_java_net_Socket_send(vm::Thread* t, vm::object, uintptr_t* arguments) {		/* SOCKET s, object buffer_obj, int start_pos, int count  */
+	SOCKET& s = *(reinterpret_cast<SOCKET*>(&arguments[0]));
+	vm::object buffer_obj = reinterpret_cast<vm::object>(arguments[2]);
+	int32_t& start_pos = *(reinterpret_cast<int32_t*>(&arguments[3]));
+	int32_t& count = *(reinterpret_cast<int32_t*>(&arguments[4]));
+	char* buffer = reinterpret_cast<char*>(&vm::byteArrayBody(t, buffer_obj, start_pos));
+	avian::classpath::sockets::send((JNIEnv*)t, s, buffer, count);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_java_net_Socket_freeBuffer(JNIEnv*, jclass, char* buf_ptr) {
-	free(buf_ptr);
+extern "C" JNIEXPORT int64_t JNICALL
+Avian_java_net_Socket_recv(vm::Thread* t, vm::object, uintptr_t* arguments) {		/* SOCKET s, object buffer_obj, int start_pos, int count  */
+	SOCKET& s = *(reinterpret_cast<SOCKET*>(&arguments[0]));
+	vm::object buffer_obj = reinterpret_cast<vm::object>(arguments[2]);
+	int32_t& start_pos = *(reinterpret_cast<int32_t*>(&arguments[3]));
+	int32_t& count = *(reinterpret_cast<int32_t*>(&arguments[4]));
+	char* buffer = reinterpret_cast<char*>(&vm::byteArrayBody(t, buffer_obj, start_pos));
+	return avian::classpath::sockets::recv((JNIEnv*)t, s, buffer, count);
 }
-
-extern "C" JNIEXPORT void JNICALL
-Java_java_net_Socket_copyBufferFromNative(JNIEnv* e, jclass, char* source_ptr, int source_size, jbyteArray target, int start_pos) {
-	if (source_size > e->GetArrayLength(target) - start_pos) {
-		throwNew(e, "java/lang/RuntimeException", "The source buffer is greater than the target array");
-		return;
-	}
-	jbyte* targetElements = e->GetByteArrayElements(target, NULL);
-	memcpy(targetElements + start_pos, source_ptr, source_size);
-	e->ReleaseByteArrayElements(target, targetElements, (int)0);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_java_net_Socket_copyBufferToNative(JNIEnv* e, jclass, jbyteArray source, int start_pos, int target_size, char* target) {
-	int source_size = e->GetArrayLength(source);
-	if (source_size - start_pos > target_size) {
-		throwNew(e, "java/lang/RuntimeException", "The source array is greater than the target buffer");
-		return;
-	}
-	jbyte* sourceElements = e->GetByteArrayElements(source, NULL);
-	memcpy(target, sourceElements + start_pos, target_size);
-	e->ReleaseByteArrayElements(source, sourceElements, JNI_ABORT);
-}*/
-
 
 extern "C" JNIEXPORT jint JNICALL
 Java_java_net_InetAddress_ipv4AddressForName(JNIEnv* e,

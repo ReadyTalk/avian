@@ -35,27 +35,37 @@
 #  define INVALID_SOCKET		-1
 #  define SOCKET_ERROR			-1
 #  define closesocket(x)		close(x)
+
+#  define SD_RECEIVE			SHUT_RD
+#  define SD_SEND				SHUT_WR
+#  define SD_BOTH				SHUT_RDWR
+
 #endif
 
+namespace avian {
+namespace classpath {
 namespace sockets {
-	// Library initialization
-	void init(JNIEnv* ONLY_ON_WINDOWS(e));
 
-	// Socket initialization
-	SOCKET create(JNIEnv* e);
-	void connect(JNIEnv* e, SOCKET sock, long addr, short port);
-	void bind(JNIEnv* e, SOCKET sock, long addr, short port);
-	SOCKET accept(JNIEnv* e, SOCKET sock, long* client_addr, short* client_port);
+// Library initialization
+void init(JNIEnv* ONLY_ON_WINDOWS(e));
 
-	// I/O
-	void send(JNIEnv* e, SOCKET sock, const char* buff_ptr, int buff_size);
-	int recv(JNIEnv* e, SOCKET sock, char* buff_ptr, int buff_size);
+// Socket initialization
+SOCKET create(JNIEnv* e);
+void connect(JNIEnv* e, SOCKET sock, long addr, short port);
+void bind(JNIEnv* e, SOCKET sock, long addr, short port);
+SOCKET accept(JNIEnv* e, SOCKET sock, long* client_addr, short* client_port);
 
-	// Socket closing
-	void abort(JNIEnv* e, SOCKET sock);
-	void close(JNIEnv* e, SOCKET sock);
-	void close_input(JNIEnv* e, SOCKET sock);
-	void close_output(JNIEnv* e, SOCKET sock);
+// I/O
+void send(JNIEnv* e, SOCKET sock, const char* buff_ptr, int buff_size);
+int recv(JNIEnv* e, SOCKET sock, char* buff_ptr, int buff_size);
+
+// Socket closing
+void abort(JNIEnv* e, SOCKET sock);
+void close(JNIEnv* e, SOCKET sock);
+void close_input(JNIEnv* e, SOCKET sock);
+void close_output(JNIEnv* e, SOCKET sock);
+
 }
-
+}
+}
 #endif /* SOCKETS_H_ */
