@@ -130,5 +130,24 @@ public class Reflection {
     expect("[Ljava.lang.Class;".equals(array[0].getClass().getName()));
     expect(Class[].class == array[0].getClass());
     expect(array.getClass().getComponentType() == array[0].getClass());
+
+    try {
+      Foo.class.getMethod("foo").invoke(null);
+      expect(false);
+    } catch (ExceptionInInitializerError e) {
+      expect(e.getCause() instanceof MyException);
+    }
   }
 }
+
+class Foo {
+  static {
+    if (true) throw new MyException();
+  }
+
+  public static void foo() {
+    // ignore
+  }
+}
+
+class MyException extends RuntimeException { }

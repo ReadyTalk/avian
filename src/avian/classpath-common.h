@@ -570,10 +570,11 @@ invoke(Thread* t, object method, object instance, object args)
   unsigned returnCode = methodReturnCode(t, method);
 
   THREAD_RESOURCE0(t, {
-      if (t->exception) {
-        object exception = t->exception;
+      if (t->exception and instanceOf
+          (t, type(t, Machine::ExceptionType), t->exception))
+      {
         t->exception = makeThrowable
-          (t, Machine::InvocationTargetExceptionType, 0, 0, exception);
+          (t, Machine::InvocationTargetExceptionType, 0, 0, t->exception);
         
         set(t, t->exception, InvocationTargetExceptionTarget,
             throwableCause(t, t->exception));
