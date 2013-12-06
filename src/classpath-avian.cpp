@@ -429,7 +429,9 @@ Avian_java_lang_reflect_Method_invoke
   object args = reinterpret_cast<object>(arguments[2]);
 
   THREAD_RESOURCE0(t, {
-      if (t->exception) {
+      if (t->exception and instanceOf
+          (t, type(t, Machine::ExceptionType), t->exception))
+      {
         object exception = t->exception;
         t->exception = makeThrowable
           (t, Machine::InvocationTargetExceptionType, 0, 0, exception);
