@@ -384,7 +384,9 @@ public class Proxy {
              ConstantPool.addUtf8(pool, Classes.toString(m.spec)),
              makeInvokeCode(pool, name, m.spec, m.parameterCount,
                             m.parameterFootprint, methodTable.size())));
-          refs.add(new Method(m));
+          refs.add
+            (Classes.makeMethod
+             (SystemClassLoader.getClass(m.class_), m.offset));
         }
       }
     }
