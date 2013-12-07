@@ -1,0 +1,442 @@
+#!/bin/sh
+ECLIPSEMAJORVER=4; DROP=S-4.4M3-201310302000; ECJVER=4.4M3; LZMASDKVER=922
+JDKREL=7u45; JDKBLD=b18; SRCREL=7u40; SRCBLD=b43; SRCDATE=26_aug_2013
+
+cd "$(dirname "$0")"; HUR="$(pwd)"
+
+info(){ echo 'Aviary: Download and configure extras to use with avian.'
+        echo ''
+        echo '    aviary [patch] | [get [all] | [component ...]]'
+        echo ''
+        echo 'Options:'
+        echo '    patch: Apply makefile patch (but do not download anything).'
+        echo '      get: Download and configure component(s). Implies "patch".'
+        echo ''
+        echo 'Available components:'
+        echo ''
+        echo '    android ecj javah lzma openjdk'
+        echo '' ;}
+
+case "$1" in
+ get)
+  case "$2" in
+   all) components=$(echo "$2" | sed -e \
+                                    's/all/ecj javah lzma openjdk android/') ;;
+   android|ecj|javah|lzma|openjdk) components=$(echo "$@"|sed -e 's/get //') ;;
+  esac ;;
+  -h|-help|--help|help)
+    info; exit ;;
+  patch) components='' ;;
+  *)
+    info; exit 1; ;;
+esac
+
+getlzma(){
+mkdir lzma; cd lzma
+echo 'Downloading LZMA SDK...'
+curl -L http://downloads.sourceforge.net/sevenzip/lzma922.tar.bz2 | bsdtar x
+rm -rf *.exe *.txt; chmod -x $(find . -type f); cd ..
+echo 'Complete. Add "lzma=lzma" to your makeflags to add LZMA support.' ;}
+
+getecj(){ echo 'Downloading ecj...'
+ECJBASEURL=http://download.eclipse.org/eclipse/downloads/drops$ECLIPSEMAJORVER
+curl -L $ECJBASEURL/$DROP/ecj-$ECJVER.jar > ecj.jar
+echo 'Complete. Use "ecj-jar=ecj.jar" to compile with ecj instead of javac.' ;}
+
+getjavah(){ echo 'Downloading javah...'
+curl -L http://gist.github.com/raw/7282908 | openssl base64 -d > javah.jar
+echo 'Complete. Add "javah-jar=javah.jar" to use this instead of JDK javah.';}
+
+compilerflags(){
+if [ x"$CC" = x"" ];        then export CC=gcc;                               fi
+if [ x"$CXX" = x"" ];       then export CXX=g++;                              fi
+if [ x"$CFLAGS" = x"" ];    then export CFLAGS='-O3 -fPIC -g0 -w -DNDEBUG';   fi
+if [ x"$CXXFLAGS" = x"" ];  then export CXXFLAGS='-O3 -fPIC -g0 -w -DNDEBUG'; fi
+if [ x"$LDFLAGS" = x"" ];   then export LDFLAGS='-L/usr/local/lib';           fi
+if [ x"$MAKEFLAGS" = x"" ]; then export MAKEFLAGS="-j3";                      fi
+
+if [ $(uname) = Darwin ]; then
+  if [ x"$CC" = x"gcc" ];   then export CC=clang;                             fi
+  if [ x"$CXX" = x"g++" ];  then export CXX=clang++;                          fi
+
+  export CFLAGS="$CFLAGS -flto -fgnu-keywords"
+  export CXXFLAGS="$CXXFLAGS -flto -fgnu-keywords -stdlib=libc++"
+  export LDFLAGS="$LDFLAGS -Wl,-S,-x,-w,-dead_strip,-dead_strip_dylibs"
+  export LDFLAGS="$LDFLAGS -Wl,-no_version_load_command,-search_paths_first"
+  export LDFLAGS="$LDFLAGS -Wl,-no_eh_labels,-export_dynamic"
+fi ;}
+
+darwing3ltobug(){ if [ $(uname) = Darwin ]; then cd $HUR; rm -rf makefile.bak;
+mv makefile makefile.bak; sed -e 's/g3/g0/g' < makefile.bak > makefile; fi ;}
+
+getandroid(){
+darwing3ltobug; compilerflags
+mkdir -p android/system; mkdir -p android/external; cd android
+
+echo 'Gathering android class library sources...'
+git clone -q http://github.com/dicej/android-libcore64 libcore &
+git clone -nq http://android.googlesource.com/platform/bionic &
+git clone -nq http://android.googlesource.com/platform/system/core system/core &
+git clone -nq http://android.googlesource.com/platform/libnativehelper &
+
+wait
+
+cd libnativehelper
+git checkout -q cf5ac0ec696fce7fac6b324ec7d4d6da217e501c
+cd ..
+
+cd bionic
+git checkout -q 84983592ade3ec7d72d082262fb6646849979bfc
+cd ..
+
+cd system/core
+git checkout -q fafcabd0dd4432de3c7f5956edec23f6ed241b56
+cd ../..
+
+echo 'Gathering android class library supporting libraries...'
+
+git clone -nq http://android.googlesource.com/platform/external/fdlibm \
+  external/fdlibm &
+git clone -nq http://android.googlesource.com/platform/external/icu4c \
+  external/icu4c &
+git clone -nq http://android.googlesource.com/platform/external/openssl \
+  external/openssl &
+git clone -nq http://android.googlesource.com/platform/external/zlib \
+  external/zlib &
+git clone -nq git://git.openssl.org/openssl.git openssl-upstream &
+
+wait
+
+cd external
+curl -L http://oss.readytalk.com/avian/expat-2.1.0.tar.gz | bsdtar x
+mv expat* expat
+cd ..
+
+cd external/fdlibm
+git checkout -q 0da5f683c9ddc9442af3b389b4220e91ccffb320
+cd ../..
+
+cd external/icu4c
+git checkout -q 8fd45e08f1054d80a356ef8aa05659a2ba84707c
+cd ../..
+
+cd external/openssl
+git checkout -q 7b972f1aa23172c4430ada7f3236fa1fd9b31756
+cd ../..
+
+cd external/zlib
+git checkout -q 15b6223aa57a347ce113729253802cb2fdeb4ad0
+cd ../..
+
+cd openssl-upstream
+git checkout -q OpenSSL_1_0_1e
+cd ..
+
+if [ $(uname) = Darwin ]; then
+ echo 'Building static C++ standard library...'
+ compile(){ clang++ -DNDEBUG -g0 -O3 -std=c++11 -nostdinc++ -Ilibc++/include \
+  -Ilibc++abi/include -fexceptions -flto -fpic -frtti -fstrict-aliasing      \
+  -mmacosx-version-min=10.7 -w -c "$@" ;}
+ for i in libcxx libcxxabi; do git clone -q http://llvm.org/git/$i; done
+  mv libcxx libc++; mv libcxxabi libc++abi; for lib in libc++abi libc++; do
+  mkdir -p cxx/$lib; for file in $(ls $lib/src/*.cpp); do compile $file; done
+  mv *.o cxx/$lib; done; for obj in stdexcept.o typeinfo.o exception.o; do
+  ld -r -arch x86_64 $(find cxx -name $obj) -o cxx/libc++abi/$obj 
+  rm -rf cxx/libc++/$obj; done; ar rc libc++.a $(find cxx -name '*.o')
+  rm -rf cxx libc++ libc++abi
+  export LDFLAGS="$LDFLAGS -L$HUR/android -stdlib=libc++ -lc++ -w"
+fi
+
+echo 'Building android class library supporting libraries...'
+cd external/expat
+./configure --enable-static --disable-shared --with-pic; make
+cd ../..
+
+cd external/fdlibm
+mv makefile.in Makefile.in || true
+sh configure; make
+cd ../..
+
+cd external/icu4c
+echo 'H4sICLTKcVICA2ljdXBhdGNoAPPMS0mtsFJIzs/Nzc/TL80tLUmt0MvgsqUccOnq
+6mKYq62tjSHm4KCga2qsoG1qpGOg4ODApauckpqWmZeqkJmXA6Qg8hZAeTOYfCnQ
+0WkwaQDe0a6BwgAAAA==' | openssl base64 -d | gzcat | patch -p0
+./configure --disable-shared --enable-static; make
+cd ../..
+
+cd openssl-upstream
+export CFLAGS="$CFLAGS -fno-lto"
+export MAKEFLAGS="$MAKEFLAGS -j1"
+
+for x in progs handshake_cutthrough jsse channelid eng_dyn_dirs \
+  fix_clang_build tls12_digests alpn; do
+    patch -p1 < ../external/openssl/patches/$x.patch
+done
+
+if [ $(uname) = Darwin ]; then
+  ./Configure no-shared threads zlib darwin64-x86_64-cc; make
+else
+  ./config; make
+fi
+
+cd ../..
+
+echo 'Complete. Add "android=android" to use the android class library.' ;}
+
+jdksetup(){
+JDKBASE=http://download.oracle.com/otn-pub/java/jdk/$JDKREL-$JDKBLD/
+SRCBASE=http://download.java.net/openjdk/jdk$SRCREL/promoted/$SRCBLD/
+JDKFILE=jdk-$JDKREL-$PLATFORM-$ARCH.$EXT; JDKURL=$JDKBASE$JDKFILE
+FCSFILE=jdk-$FCSREL-fcs-bin-$FCSBLD-$PLATFORM-$FCSARCH-$FCSDATE.$EXT
+SRCURL=$SRCBASE$SRCFILE; FCSURL=$FCSBASE$FCSFILE
+SRCFILE=openjdk-$SRCREL-fcs-src-$SRCBLD-$SRCDATE.zip; JDKCOOKIE=gpw_e24=http
+
+case $(uname -m) in *64*) ARCH=x64 ;; *86*) ARCH=i586 ;;
+ *) echo "Sorry, I can't figure out your system architecture."   && exit 1    ;;
+esac; case $(uname) in
+  Darwin)               PLATFORM=macosx  ; EXT=dmg                            ;;
+  Linux|*BSD|DragonFly) PLATFORM=linux   ; EXT=tar.gz                         ;;
+  SunOS)                PLATFORM=solaris ; EXT=tar.gz                         ;;
+  *GW*)                 PLATFORM=windows ; EXT=exe                            ;;
+  *) echo "Sorry, I can't figure out what OS you're running."    && exit 1    ;;
+esac
+if   [ $PLATFORM = macosx  ]; then FCSARCH=x86_64; else FCSARCH=$ARCH; fi
+if   [ $PLATFORM = solaris ]; then
+  echo "Sorry, Illumos/Solaris support is not yet implemented."  && exit 1
+elif [ $PLATFORM = windows ]; then
+  echo "Sorry, Windows support is not yet implemented."          && exit 1
+elif [ $PLATFORM = macosx  ]; then if [ $ARCH = i586 ]; then
+  echo "Sorry, 32-bit Mac OS X isn't supported."                 && exit 1; fi
+fi ;}
+
+macjdk(){ echo 'Extracting JDK from disk image...'
+          hdiutil makehybrid -iso -joliet jdk -o jdk; rm jdk; tar xf *.iso
+          xar -xf *.pkg; cp jdk*pkg/Payload /tmp; rm -rf *; PAYLOAD=/tmp/Payload
+          tar xf $PAYLOAD --strip-components 3 Contents/Home; rm -rf $PAYLOAD ;}
+
+getjdk(){ jdksetup; case $PLATFORM in
+           linux) curl -Lb $JDKCOOKIE $JDKURL | bsdtar x --strip-components 1 ;;
+          macosx) curl -Lb $JDKCOOKIE $JDKURL > jdk; macjdk                   ;;
+          esac                                                                ;}
+
+getjdksrc(){ curl -L $SRCURL | bsdtar x --strip-components 2 openjdk/jdk/src  ;}
+
+getopenjdk(){ darwing3ltobug; jdksetup; mkdir openjdk; cd openjdk
+   echo 'Downloading JDK...'; getjdk
+   echo 'Downloading JDK source files...'; getjdksrc
+   echo 'Patching JDK source files with latest updates...'
+   cd src; patchsrc; cd ../..; echo \
+   'Complete. Add "openjdk=$PWD/openjdk openjdk-src=$PWD/openjdk/src" to use.';}
+
+patchsrc(){ curl -L http://gist.github.com/raw/7286377 | openssl base64 -d | \
+            bzcat | patch -p0 ;}
+
+dopatch(){ if [ ! -e "$HUR/.patched" ]; then
+echo 'Applying patch...'; echo '
+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
+QUerq6u9yQBehiHMq1rERERERVaIxYtpnAvnC666Orhg8zvZOU1Co8826qasckJW
+024ix1uoulmt6jY63UWOt1FtahUaR63Uba1CrekPDvXh7+8ncRbukkk88RESyyyW
+zJLNcTW/v7463JmAAAADkTMwAClAAAAAAAAAAAAAAAJaAAABt4OYVVFVRzTE0emC
+unn70PJq4nadoYgCvQCgp6DQWVFdO0iX6g67YL2mqA+Y7/LhcIAXr18mvzO2+Pe3
+vc+Ai3wSSSfBERFIQgSGZcDgldvVVVVUcoW9iDEIIiw5ikQWsI+jCQJFkMIsLqVR
+BvCMi/JnrqE7sM43nwidvZ6T2QD1jUERYd/nO+wAryQht9HfUqqrf6uV+b6ZJK8U
+knX2U24yElvTJJJ1iIiJKL4/pa18d6eHgzw5hm+K5FnaAs6nVeh5UJ4H3Y25u0i1
+1QqNzbqpqNzbqpqN26qajY1bCa9Sm7SLWzXu01KuIs2O2ZN1SLUXbNb1FmzXJqNj
+3ZNRsfkpJJywnD4Sm7SLWzXu00tUKiyqFRopbMiUm0qeimqmo026qaiyqFRu3VTU
+bt1U1FKLq7uyIjDInlB7oAgDWYOYM+mKIfEaWot7XJ1eNxgKUAAC0BAVVVVVXERT
+IDxj6Q8YdHuEfV5dpCI/KbDQX/yt36/tq769Pq+nhzi3vaukkknqxISEhIQgSFNg
+327keS20h5nw+AL9QJ55Ik0dBY3jXDhroMfzaVrXnvNe3nDtSU0B5t52klda9q1f
+RXqxr6v2AA+aq+b6XKrnOVXG7duAAAAAAa4tTopJu5c6aa1knIkvUXdJN3K1wa4/
+HAAAAAAAAAAAAOc5z4d73sEW+hJJJ7MRERJReTvt1t01LNSzUs1NTUs1LNTU1LLV
++HeTenv7ABt03OAJf08gQ31uJCbnzpwQIcOBgnQETkdaE5uaqqqqqrvW8DPHwzOp
+zIDzcLatVHaBrgrIhIoMgpq2iu/UjR9xAMXn6ukkJCQjGxjBs2GJ0att8/FJfcM0
+EcAILjt8dg+g8o7Rrh2CAn1wOGLqIgYT9v11UtB5joolK8wcGQbHszzoyrGZDwYh
+E+IdwxzZjc3oejB3kat2iE4GxPUNBr8S0kS4lQkhneecDAPMYGRmoO6B8RnXtnUd
+C0nGnUVeZgGIAxFTlfaHCyrkJ13wK5j9bCMDhEhSHY4XxQaIEPcecLASAgPtHeEN
+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'| \
+openssl base64 -d|bzcat|patch -sp0; touch "$HUR/.patched"; fi ;}
+
+dopatch
+for component in $(echo $components); do
+  get$component
+done
