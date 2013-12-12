@@ -2653,17 +2653,6 @@ Avian_sun_misc_Unsafe_staticFieldBase
 }
 
 extern "C" AVIAN_EXPORT int64_t JNICALL
-Avian_sun_misc_Unsafe_objectFieldOffset
-(Thread* t, object, uintptr_t* arguments)
-{
-  object jfield = reinterpret_cast<object>(arguments[1]);
-  return fieldOffset
-    (t, arrayBody
-     (t, classFieldTable
-      (t, jclassVmClass(t, jfieldClazz(t, jfield))), jfieldSlot(t, jfield)));
-}
-
-extern "C" AVIAN_EXPORT int64_t JNICALL
 Avian_sun_misc_Unsafe_getShort__Ljava_lang_Object_2J
 (Thread*, object, uintptr_t* arguments)
 {
@@ -2896,29 +2885,6 @@ Avian_sun_misc_Unsafe_putOrderedObject
 (Thread* t, object method, uintptr_t* arguments)
 {
   Avian_sun_misc_Unsafe_putObjectVolatile(t, method, arguments);
-}
-
-extern "C" AVIAN_EXPORT int64_t JNICALL
-Avian_sun_misc_Unsafe_compareAndSwapLong
-(Thread* t UNUSED, object, uintptr_t* arguments)
-{
-  object target = reinterpret_cast<object>(arguments[1]);
-  int64_t offset; memcpy(&offset, arguments + 2, 8);
-  uint64_t expect; memcpy(&expect, arguments + 4, 8);
-  uint64_t update; memcpy(&update, arguments + 6, 8);
-
-#ifdef AVIAN_HAS_CAS64
-  return atomicCompareAndSwap64
-    (&fieldAtOffset<uint64_t>(target, offset), expect, update);
-#else
-  ACQUIRE_FIELD_FOR_WRITE(t, local::fieldForOffset(t, target, offset));
-  if (fieldAtOffset<uint64_t>(target, offset) == expect) {
-    fieldAtOffset<uint64_t>(target, offset) = update;
-    return true;
-  } else {
-    return false;
-  }
-#endif
 }
 
 extern "C" AVIAN_EXPORT int64_t JNICALL
