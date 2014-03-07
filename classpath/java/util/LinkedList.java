@@ -232,7 +232,7 @@ public class LinkedList<T> extends AbstractSequentialList<T> {
   }
 
   public String toString() {
-    return Collections.toString(this);
+    return avian.Data.toString(this);
   }
 
   private static class Cell<T> {
