@@ -1,7 +1,7 @@
 MAKEFLAGS = -s
 
 name = avian
-version = 0.7
+version = 0.7.1.1
 
 build-arch := $(shell uname -m \
 	| sed 's/^i.86$$/i386/' \
@@ -629,8 +629,8 @@ ifeq ($(platform),darwin)
 			elif test -d $(sdk-dir)/$(target)5.1.sdk; then echo 5.1; \
 			elif test -d $(sdk-dir)/$(target)5.0.sdk; then echo 5.0; \
 			elif test -d $(sdk-dir)/$(target)4.3.sdk; then echo 4.3; \
-  		elif test -d $(sdk-dir)/$(target)4.2.sdk; then echo 4.2; \
-  		else echo; fi)
+			elif test -d $(sdk-dir)/$(target)4.2.sdk; then echo 4.2; \
+			else echo; fi)
 
 		ifeq ($(ios-version),)
 			x := $(error "couldn't find SDK")
