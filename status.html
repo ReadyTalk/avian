@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+
+    <link rel="stylesheet" type="text/css" href="css.css"/>
+    
+    <title>Avian | Status</title>
+
+  </head>
+
+  <body>
+    
+    <!-- hack for IE: -->
+    <div class="bgmiddle"><hr/></div>
+    <!-- hack for other browsers: -->
+    <div class="bgmiddle-fixed"></div>
+
+    <!-- start top -->
+    <div class="topleft">
+      
+      <img src="kite.png" class="icon"
+           width="110" height="73" alt="kite"/>
+
+    </div>
+
+    <div class="topmiddle">
+
+      <div style="margin: 8px 6px 2px 8px;
+                  font-size: 36px;">Avian</div>
+      <span style="font-style: italic; margin: 6px 6px 0px 8px;"
+            >A lightweight alternative to Java</span>
+      <!-- hack for IE: --><hr/>
+
+    </div>
+    <!-- end top -->
+    
+    <!-- start body -->  
+    <div class="middle">
+      <div style="max-width: 640px">
+      
+      
+<h2>Status</h2>
+
+<h3>Current Release</h3>
+<p>
+  The latest release is version 1.0.  As of this release, everything
+  should work as advertised on the supported platforms.  Please post
+  to the <a href="http://groups.google.com/group/avian">discussion
+  group</a> if you have any problems.
+</p>
+
+<a href="../avian-web/avian-1.0.tar.bz2">
+  <div class="code">
+    Download Avian 1.0
+  </div>
+</a>
+
+<p>
+  Recent changes:
+</p>
+<ul>
+  <li>Lots of bugfixes throughout the code</li>
+  <li>Improved support for the Android and OpenJDK class libraries</li>
+  <li>More extensive java.util.concurrent implementation</li>
+</ul>
+
+<h3>Ideas for the future</h3>
+<ul>
+  <li>Add java.lang.invoke support</li>
+  <li>Experiment with trace-based JIT compilation</li>
+  <li>Improve ahead-of-time compilation using <a
+  href="http://llvm.org/">LLVM</a></li>
+  <li>Add support for escape analysis to determine where objects may
+  be safely allocated on the stack instead of the heap</li>
+  <li>Rework memory allocation in garbage collector to improve
+  performance in low memory situations
+  (see <a href="http://groups.google.com/group/avian/browse_thread/thread/5b3f13bf198334b3">here</a>
+  for details)</li>
+  <li>Support additional architectures such as 64-bit ARM</li>
+</ul>
+
+
+
+      </div>
+      <!-- hack for IE: --><hr/>
+
+    </div>
+    <!-- end body -->
+
+    <!-- start icons -->
+<!-- this is a bit distracting, so I'm leaving it out
+    <div class="icons">
+
+
+      <a href="http://validator.w3.org/check/referer">
+        <img class="icon" src="http://www.w3.org/Icons/valid-xhtml11"
+             width="88" height="31" alt="Valid XHTML 1.1"/>
+      </a>
+
+    </div> -->
+    <!-- end icons -->
+
+    <!-- start navigation sidebar -->
+    <div class="left">
+
+      <ul>
+
+        <li><div class="le"><a href="index.html">about</a></div></li>
+        <li><div class="les">status</div></li>
+        <li><div class="le"><a href="examples.html">examples</a></div></li>
+
+        <li><div class="le">code</div>
+
+          <ul>
+
+            <li><div class="le"><a href="https://github.com/ReadyTalk/avian">repository</a></div></li>
+            <li><div class="le"><a href="license.html">license</a></div></li>
+
+          </ul>
+        </li>
+
+        <li><div class="le">documentation</div>
+
+          <ul>
+
+            <li><div class="le"><a href="https://github.com/ReadyTalk/avian/blob/41adb74eb1895c662920fdfb7467ce415d9fa0b7/README.md">building</a></div></li>
+            <li><div class="le"><a href="../avian-web/javadoc-1.0/index.html">javadoc</a></div></li>
+
+          </ul>
+        </li>
+
+        <li><div class="le"><a href="http://groups.google.com/group/avian">discussion</a></div></li>
+
+      </ul>
+
+    </div>
+    <!-- end navigation sidebar -->
+
+  </body>
+</html>
+

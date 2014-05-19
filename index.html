@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+
+    <link rel="stylesheet" type="text/css" href="css.css"/>
+    
+    <title>Avian | About</title>
+
+  </head>
+
+  <body>
+    
+    <!-- hack for IE: -->
+    <div class="bgmiddle"><hr/></div>
+    <!-- hack for other browsers: -->
+    <div class="bgmiddle-fixed"></div>
+
+    <!-- start top -->
+    <div class="topleft">
+      
+      <img src="kite.png" class="icon"
+           width="110" height="73" alt="kite"/>
+
+    </div>
+
+    <div class="topmiddle">
+
+      <div style="margin: 8px 6px 2px 8px;
+                  font-size: 36px;">Avian</div>
+      <span style="font-style: italic; margin: 6px 6px 0px 8px;"
+            >A lightweight alternative to Java</span>
+      <!-- hack for IE: --><hr/>
+
+    </div>
+    <!-- end top -->
+    
+    <!-- start body -->  
+    <div class="middle">
+      <div style="max-width: 640px">
+      
+      
+<h2>About Avian</h2>
+<p>
+  Avian is a lightweight virtual machine and class library designed to
+  provide a useful subset of Java's features, suitable for building
+  self-contained applications.
+</p>
+
+<h3>Efficient</h3>
+<p>
+  The VM is implemented from scratch and designed to be both fast and
+  small.
+</p>
+<ul>
+  <li>Just-In-Time (JIT) compilation for fast method execution</li>
+  <li>Generational, copying garbage collection ensures short pause
+  times and good spatial locality</li>
+  <li>Thread-local heaps provide O(1) memory allocation with no
+  synchronization overhead</li>
+  <li>Null pointer dereferences are handled via OS signals to avoid
+  unecessary branches</li>
+</ul>
+<p>
+  The class library is designed to be as loosely coupled as possible,
+  allowing tools
+  like <a href="http://proguard.sourceforge.net/">ProGuard</a> to
+  aggressively isolate the minimum code needed for an application.
+  This translates to smaller downloads and faster startup.
+</p>
+
+<h3>Portable</h3>
+<p>
+  Platform-specific code is hidden behind a generic interface, so
+  adding support for new OSes is easy.  Avian currently supports Linux
+  (i386, x86_64, and ARM), Windows (i386 and x86_64), OS X (i386 and
+  x86_64), iOS (i386 and ARM), and FreeBSD (i386 and x86_64).
+</p>
+<p>
+  The only third party dependency beyond OS-provided libraries
+  is <a href="http://zlib.net/">zlib</a>, which is itself very
+  portable.  Although the VM is written in C++, it does not depend on
+  the C++ standard library, and is therefore robust in the face of ABI
+  changes.
+</p>
+
+<h3>Embeddable</h3>
+<p>
+  Not only can applications embed the VM, but the VM itself supports
+  class and resource loading from embedded jar files.  This means you
+  can produce a single executable containing your entire application,
+  thus simplifying the installation process.
+</p>
+
+
+
+      </div>
+      <!-- hack for IE: --><hr/>
+
+    </div>
+    <!-- end body -->
+
+    <!-- start icons -->
+<!-- this is a bit distracting, so I'm leaving it out
+    <div class="icons">
+
+
+      <a href="http://validator.w3.org/check/referer">
+        <img class="icon" src="http://www.w3.org/Icons/valid-xhtml11"
+             width="88" height="31" alt="Valid XHTML 1.1"/>
+      </a>
+
+    </div> -->
+    <!-- end icons -->
+
+    <!-- start navigation sidebar -->
+    <div class="left">
+
+      <ul>
+
+        <li><div class="les">about</div></li>
+        <li><div class="le"><a href="status.html">status</a></div></li>
+        <li><div class="le"><a href="examples.html">examples</a></div></li>
+
+        <li><div class="le">code</div>
+
+          <ul>
+
+            <li><div class="le"><a href="https://github.com/ReadyTalk/avian">repository</a></div></li>
+            <li><div class="le"><a href="license.html">license</a></div></li>
+
+          </ul>
+        </li>
+
+        <li><div class="le">documentation</div>
+
+          <ul>
+
+            <li><div class="le"><a href="https://github.com/ReadyTalk/avian/blob/41adb74eb1895c662920fdfb7467ce415d9fa0b7/README.md">building</a></div></li>
+            <li><div class="le"><a href="../avian-web/javadoc-1.0/index.html">javadoc</a></div></li>
+
+          </ul>
+        </li>
+
+        <li><div class="le"><a href="http://groups.google.com/group/avian">discussion</a></div></li>
+
+      </ul>
+
+    </div>
+    <!-- end navigation sidebar -->
+
+  </body>
+</html>
+
