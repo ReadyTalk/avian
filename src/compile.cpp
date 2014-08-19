@@ -8372,36 +8372,59 @@ class SignalHandler: public SignalRegistrar::Handler {
   SignalHandler(Machine::Type type, Machine::Root root, unsigned fixedSize):
     m(0), type(type), root(root), fixedSize(fixedSize) { }
 
-  virtual bool handleSignal(void** ip, void** frame, void** stack,
+  void setException(MyThread* t) {
+    if (ensure(t, fixedSize + traceSize(t))) {
+      atomicOr(&(t->flags), Thread::TracingFlag);
+      t->exception = makeThrowable(t, type);
+      atomicAnd(&(t->flags), ~Thread::TracingFlag);
+    } else {
+      // not enough memory available for a new exception and stack
+      // trace -- use a preallocated instance instead
+      t->exception = vm::root(t, root);
+    }
+  }
+
+  virtual bool handleSignal(void** ip,
+                            void** frame,
+                            void** stack,
                             void** thread)
   {
     MyThread* t = static_cast<MyThread*>(m->localThread->get());
     if (t and t->state == Thread::ActiveState) {
-      object node = methodForIp(t, *ip);
-      if (node) {
+      if (t->flags & Thread::TryNativeFlag) {
+        setException(t);
+
+        popResources(t);
+
+        GcContinuation* continuation;
+        findUnwindTarget(t, ip, frame, stack, &continuation);
+
+        t->trace->targetMethod = 0;
+        t->trace->nativeMethod = 0;
+
+        transition(t, *ip, *stack, continuation, t->trace);
+
+        *thread = t;
+
+        return true;
+      } else if (methodForIp(t, *ip)) {
         // add one to the IP since findLineNumber will subtract one
         // when we make the trace:
-        MyThread::TraceContext context
-          (t, static_cast<uint8_t*>(*ip) + 1,
-           static_cast<void**>(*stack) - t->arch->frameReturnAddressSize(),
-           t->continuation, t->trace);
+        MyThread::TraceContext context(
+            t,
+            static_cast<uint8_t*>(*ip) + 1,
+            static_cast<void**>(*stack) - t->arch->frameReturnAddressSize(),
+            t->continuation,
+            t->trace);
 
-        if (ensure(t, fixedSize + traceSize(t))) {
-          atomicOr(&(t->flags), Thread::TracingFlag);
-          t->exception = makeThrowable(t, type);
-          atomicAnd(&(t->flags), ~Thread::TracingFlag);
-        } else {
-          // not enough memory available for a new exception and stack
-          // trace -- use a preallocated instance instead
-          t->exception = vm::root(t, root);
-        }
+        setException(t);
 
         // printTrace(t, t->exception);
 
         object continuation;
         findUnwindTarget(t, ip, frame, stack, &continuation);
 
-        transition(t, ip, stack, continuation, t->trace);
+        transition(t, *ip, *stack, continuation, t->trace);
 
         *thread = t;
 
