@@ -2489,8 +2489,8 @@ void NO_RETURN
 throwArithmetic(MyThread* t)
 {
   if (ensure(t, FixedSizeOfArithmeticException + traceSize(t))) {
-    atomicOr(&(t->flags), Thread::TracingFlag);
-    THREAD_RESOURCE0(t, atomicAnd(&(t->flags), ~Thread::TracingFlag));
+    t->setFlag(Thread::TracingFlag);
+    THREAD_RESOURCE0(t, t->clearFlag(Thread::TracingFlag));
 
     throwNew(t, Machine::ArithmeticExceptionType); 
   } else {
@@ -2717,8 +2717,8 @@ void NO_RETURN
 throwArrayIndexOutOfBounds(MyThread* t)
 {
   if (ensure(t, FixedSizeOfArrayIndexOutOfBoundsException + traceSize(t))) {
-    atomicOr(&(t->flags), Thread::TracingFlag);
-    THREAD_RESOURCE0(t, atomicAnd(&(t->flags), ~Thread::TracingFlag));
+    t->setFlag(Thread::TracingFlag);
+    THREAD_RESOURCE0(t, t->clearFlag(Thread::TracingFlag));
 
     throwNew(t, Machine::ArrayIndexOutOfBoundsExceptionType); 
   } else {
@@ -3015,7 +3015,7 @@ gcIfNecessary(MyThread* t)
 {
   stress(t);
 
-  if (UNLIKELY(t->flags & Thread::UseBackupHeapFlag)) {
+  if (UNLIKELY(t->getFlags() & Thread::UseBackupHeapFlag)) {
     collect(t, Heap::MinorCollection);
   }
 }
@@ -8326,8 +8326,8 @@ invoke(Thread* thread, object method, ArgumentList* arguments)
        returnType);
   }
 
-  if (t->exception) { 
-    if (UNLIKELY(t->flags & Thread::UseBackupHeapFlag)) {
+  if (t->exception) {
+    if (UNLIKELY(t->getFlags() & Thread::UseBackupHeapFlag)) {
       collect(t, Heap::MinorCollection);
     }
     
@@ -8374,9 +8374,9 @@ class SignalHandler: public SignalRegistrar::Handler {
 
   void setException(MyThread* t) {
     if (ensure(t, fixedSize + traceSize(t))) {
-      atomicOr(&(t->flags), Thread::TracingFlag);
+      t->setFlag(Thread::TracingFlag);
       t->exception = makeThrowable(t, type);
-      atomicAnd(&(t->flags), ~Thread::TracingFlag);
+      t->clearFlag(Thread::TracingFlag);
     } else {
       // not enough memory available for a new exception and stack
       // trace -- use a preallocated instance instead
@@ -8391,12 +8391,12 @@ class SignalHandler: public SignalRegistrar::Handler {
   {
     MyThread* t = static_cast<MyThread*>(m->localThread->get());
     if (t and t->state == Thread::ActiveState) {
-      if (t->flags & Thread::TryNativeFlag) {
+      if (t->getFlags() & Thread::TryNativeFlag) {
         setException(t);
 
         popResources(t);
 
-        GcContinuation* continuation;
+        object continuation;
         findUnwindTarget(t, ip, frame, stack, &continuation);
 
         t->trace->targetMethod = 0;
@@ -9025,9 +9025,9 @@ class MyProcessor: public Processor {
         }
 
         if (ensure(t, traceSize(target))) {
-          atomicOr(&(t->flags), Thread::TracingFlag);
+          t->setFlag(Thread::TracingFlag);
           trace = makeTrace(t, target);
-          atomicAnd(&(t->flags), ~Thread::TracingFlag);
+          t->clearFlag(Thread::TracingFlag);
         }
       }
 
@@ -9039,7 +9039,7 @@ class MyProcessor: public Processor {
 
     t->m->system->visit(t->systemThread, target->systemThread, &visitor);
 
-    if (UNLIKELY(t->flags & Thread::UseBackupHeapFlag)) {
+    if (UNLIKELY(t->getFlags() & Thread::UseBackupHeapFlag)) {
       PROTECT(t, visitor.trace);
 
       collect(t, Heap::MinorCollection);

@@ -50,8 +50,8 @@ join(Thread* t, Thread* o)
 {
   if (t != o) {
     assert(t, o->state != Thread::JoinedState);
-    assert(t, (o->flags & Thread::SystemFlag) == 0);
-    if (o->flags & Thread::JoinFlag) {
+    assert(t, (o->getFlags() & Thread::SystemFlag) == 0);
+    if (o->getFlags() & Thread::JoinFlag) {
       o->systemThread->join();
     }
     o->state = Thread::JoinedState;
@@ -175,7 +175,7 @@ disposeNoRemove(Thread* m, Thread* o)
 void
 interruptDaemon(Thread* m, Thread* o)
 {
-  if (o->flags & Thread::DaemonFlag) {
+  if (o->getFlags() & Thread::DaemonFlag) {
     interrupt(m, o);
   }
 }
@@ -265,7 +265,7 @@ killZombies(Thread* t, Thread* o)
     killZombies(t, child);
   }
 
-  if ((o->flags & Thread::SystemFlag) == 0) {
+  if ((o->getFlags() & Thread::SystemFlag) == 0) {
     switch (o->state) {
     case Thread::ZombieState:
       join(t, o);
@@ -712,10 +712,10 @@ postCollect(Thread* t)
     t->heapIndex = 0;
   }
 
-  if (t->flags & Thread::UseBackupHeapFlag) {
+  if (t->getFlags() & Thread::UseBackupHeapFlag) {
     memset(t->backupHeap, 0, ThreadBackupHeapSizeInBytes);
 
-    t->flags &= ~Thread::UseBackupHeapFlag;
+    t->clearFlag(Thread::UseBackupHeapFlag);
     t->backupHeapIndex = 0;
   }
 
@@ -3011,8 +3011,9 @@ doCollect(Thread* t, Heap::CollectionType type, int pendingAllocation)
   THREAD_RESOURCE0(t, t->m->collecting = false);
 
 #ifdef VM_STRESS
-  bool stress = (t->flags & Thread::StressFlag) != 0;
-  if (not stress) atomicOr(&(t->flags), Thread::StressFlag);
+  bool stress = (t->getFlags() & Thread::StressFlag) != 0;
+  if (not stress)
+    t->setFlag(Thread::StressFlag);
 #endif
 
   Machine* m = t->m;
@@ -3040,7 +3041,8 @@ doCollect(Thread* t, Heap::CollectionType type, int pendingAllocation)
   }
 
 #ifdef VM_STRESS
-  if (not stress) atomicAnd(&(t->flags), ~Thread::StressFlag);
+  if (not stress)
+    t->clearFlag(Thread::StressFlag);
 #endif
 
   object finalizeQueue = t->m->finalizeQueue;
@@ -3622,8 +3624,8 @@ enter(Thread* t, Thread::State s)
       assert(t, t->m->liveCount > 0);
       -- t->m->liveCount;
 
-      if (t->flags & Thread::DaemonFlag) {
-        -- t->m->daemonCount;
+      if (t->getFlags() & Thread::DaemonFlag) {
+        --t->m->daemonCount;
       }
     }
 
@@ -3724,16 +3726,18 @@ allocate3(Thread* t, Allocator* allocator, Machine::AllocationType type,
 {
   expect(t, t->criticalLevel == 0);
 
-  if (UNLIKELY(t->flags & Thread::UseBackupHeapFlag)) {
-    expect(t,  t->backupHeapIndex + ceilingDivide(sizeInBytes, BytesPerWord)
+  if (UNLIKELY(t->getFlags() & Thread::UseBackupHeapFlag)) {
+    expect(t,
+           t->backupHeapIndex + ceilingDivide(sizeInBytes, BytesPerWord)
            <= ThreadBackupHeapSizeInWords);
     
     object o = reinterpret_cast<object>(t->backupHeap + t->backupHeapIndex);
     t->backupHeapIndex += ceilingDivide(sizeInBytes, BytesPerWord);
     fieldAtOffset<object>(o, 0) = 0;
     return o;
-  } else if (UNLIKELY(t->flags & Thread::TracingFlag)) {
-    expect(t, t->heapIndex + ceilingDivide(sizeInBytes, BytesPerWord)
+  } else if (UNLIKELY(t->getFlags() & Thread::TracingFlag)) {
+    expect(t,
+           t->heapIndex + ceilingDivide(sizeInBytes, BytesPerWord)
            <= ThreadHeapSizeInWords);
     return allocateSmall(t, sizeInBytes);
   }

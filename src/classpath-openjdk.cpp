@@ -627,7 +627,7 @@ class MyClasspath : public Classpath {
 
     THREAD_RESOURCE0(t, {
         vm::acquire(t, t->javaThread);
-        t->flags &= ~Thread::ActiveFlag;
+        t->clearFlag(Thread::ActiveFlag);
         vm::notifyAll(t, t->javaThread);
         vm::release(t, t->javaThread);
 
@@ -3258,7 +3258,7 @@ EXPORT(JVM_IsThreadAlive)(Thread* t, jobject thread)
   ENTER(t, Thread::ActiveState);
 
   Thread* p = reinterpret_cast<Thread*>(threadPeer(t, *thread));
-  return p and (p->flags & Thread::ActiveFlag) != 0;
+  return p and (p->getFlags() & Thread::ActiveFlag) != 0;
 }
 
 extern "C" AVIAN_EXPORT void JNICALL
