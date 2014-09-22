@@ -8337,7 +8337,8 @@ class MyProcessor : public Processor {
         codeAllocator(s, Slice<uint8_t>(0, 0)),
         callTableSize(0),
         useNativeFeatures(useNativeFeatures),
-        compilationHandlers(0)
+        compilationHandlers(0),
+        aotOnly(true)
   {
     thunkTable[compileMethodIndex] = voidPointer(local::compileMethod);
     thunkTable[compileVirtualMethodIndex] = voidPointer(compileVirtualMethod);
@@ -8365,6 +8366,10 @@ class MyProcessor : public Processor {
 
   virtual Thread* makeThread(Machine* m, GcThread* javaThread, Thread* parent)
   {
+    { const char* aotOnlyProperty = findProperty(m, "avian.aotonly");
+      aotOnly = aotOnlyProperty and strcmp(aotOnlyProperty, "true") == 0;
+    }
+
     MyThread* t = new (m->heap->allocate(sizeof(MyThread))) MyThread(
         m, javaThread, static_cast<MyThread*>(parent), useNativeFeatures);
 
@@ -9091,6 +9096,7 @@ class MyProcessor : public Processor {
   bool useNativeFeatures;
   void* thunkTable[dummyIndex + 1];
   CompilationHandlerList* compilationHandlers;
+  bool aotOnly;
 };
 
 const char* stringOrNull(const char* str)
@@ -10134,6 +10140,8 @@ void compile(MyThread* t,
   }
 
   assertT(t, (method->flags() & ACC_NATIVE) == 0);
+
+  expect(t, not processor(t)->aotOnly);
 
   // We must avoid acquiring any locks until after the first pass of
   // compilation, since this pass may trigger classloading operations
