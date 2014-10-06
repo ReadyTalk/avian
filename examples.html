@@ -59,37 +59,37 @@
   <tr>
     <td>Linux/x86_64</td>
     <td><a href="../avian-web/swt-examples/linux-x86_64/example">download</a>
-    (1028K)</td>
+    (1071K)</td>
   </tr>
   <tr>
     <td>Linux/i386</td>
     <td><a href="../avian-web/swt-examples/linux-i386/example">download</a>
-    (958K)</td>
+    (1028K)</td>
   </tr>
   <tr>
     <td>Linux/ARM</td>
     <td><a href="../avian-web/swt-examples/linux-arm/example">download</a>
-    (853K)</td>
+    (882K)</td>
   </tr>
   <tr>
     <td>OS X/x86_64</td>
-    <td><a href="../avian-web/swt-examples/darwin-x86_64/example">download</a>
-    (1041K)</td>
+    <td><a href="../avian-web/swt-examples/macosx-x86_64/example">download</a>
+    (1066K)</td>
   </tr>
   <tr>
     <td>OS X/i386</td>
-    <td><a href="../avian-web/swt-examples/darwin-i386/example">download</a>
-    (1085K)</td>
+    <td><a href="../avian-web/swt-examples/macosx-i386/example">download</a>
+    (1053K)</td>
   </tr>
   <tr>
     <td>Windows/x86_64</td>
     <td><a href="../avian-web/swt-examples/windows-x86_64/example.exe">download</a>
-    (1048K)</td>
+    (1111K)</td>
   </tr>
   <tr>
     <td>Windows/i386</td>
     <td><a href="../avian-web/swt-examples/windows-i386/example.exe">download</a>
-    (1015K)</td>
+    (1072K)</td>
   </tr>
 </table>
 <br/>
@@ -104,8 +104,8 @@
 # linux-x86_64           swt-4.3-gtk-linux-x86_64.zip
 # linux-i386             swt-4.3-gtk-linux-x86.zip
 # linux-arm              swt-4.3-gtk-linux-arm.zip
-# darwin-x86_64          swt-4.3-cocoa-macosx-x86_64.zip
-# darwin-i386            swt-4.3-cocoa-macosx.zip
+# macosx-x86_64          swt-4.3-cocoa-macosx-x86_64.zip
+# macosx-i386            swt-4.3-cocoa-macosx.zip
 # windows-x86_64         swt-4.3-win32-win32-x86_64.zip
 # windows-i386           swt-4.3-win32-win32-x86.zip
 
@@ -118,10 +118,10 @@ curl -Of http://oss.readytalk.com/avian-web/lzma920.tar.bz2
 curl -Of http://oss.readytalk.com/avian-web/${swt_zip}
 mkdir -p swt/${platform}
 unzip -d swt/${platform} ${swt_zip}
-curl -Of http://oss.readytalk.com/avian-web/avian-1.0.2.tar.bz2
-tar xjf avian-1.0.2.tar.bz2
-curl -Of http://oss.readytalk.com/avian-web/avian-swt-examples-1.0.2.tar.bz2
-tar xjf avian-swt-examples-1.0.2.tar.bz2
+curl -Of http://oss.readytalk.com/avian-web/avian-1.1.0.tar.bz2
+tar xjf avian-1.1.0.tar.bz2
+curl -Of http://oss.readytalk.com/avian-web/avian-swt-examples-1.1.0.tar.bz2
+tar xjf avian-swt-examples-1.1.0.tar.bz2
 # needed only for 32-bit Windows builds:
 git clone https://github.com/ReadyTalk/win32.git
 # needed only for 64-bit Windows builds:
@@ -176,7 +176,7 @@ make lzma=$(pwd)/../lzma-920 full-platform=${platform} example</pre></div>
           <ul>
 
             <li><div class="le"><a href="https://github.com/ReadyTalk/avian/blob/41adb74eb1895c662920fdfb7467ce415d9fa0b7/README.md">building</a></div></li>
-            <li><div class="le"><a href="../avian-web/javadoc-1.0.2/index.html">javadoc</a></div></li>
+            <li><div class="le"><a href="../avian-web/javadoc-1.1.0/index.html">javadoc</a></div></li>
 
           </ul>
         </li>
