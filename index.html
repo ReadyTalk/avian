@@ -1,157 +1,228 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
-          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
   <head>
-
-    <link rel="stylesheet" type="text/css" href="css.css"/>
-    
-    <title>Avian | About</title>
-
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <title>Avian</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" type="text/css" href="/avian/stylesheets/stylesheet.css"/>
+    <link rel="stylesheet" type="text/css" href="/avian/stylesheets/pygments.css"/>
   </head>
-
   <body>
-    
-    <!-- hack for IE: -->
-    <div class="bgmiddle"><hr/></div>
-    <!-- hack for other browsers: -->
-    <div class="bgmiddle-fixed"></div>
+    <header class="bs-docs-container">
+      <a id="discuss_banner" href="https://groups.google.com/group/avian">Discuss on Groups</a>
+      <a id="forkme_banner" href="https://github.com/ReadyTalk/avian">View on GitHub</a>
+      <div class="inline-logo">
+        <img src="/avian/images/kite.png"></img>
+        <h1>Avian</h1>
+      </div>
+      <h2>A lightweight alternative to Java</h2>
+    </header>
+    <div class="container bs-docs-container">
+      <div class="row">
+        <article class="col-md-9">
 
-    <!-- start top -->
-    <div class="topleft">
-      
-      <img src="kite.png" class="icon"
-           width="110" height="73" alt="kite"/>
+<section id="-bout"><h2 id="about-avian">About Avian</h2>
 
-    </div>
+<p>Avian is a lightweight virtual machine and class lbrary designed to provide a
+useful subset of Java’s features, suitable for building self-contained
+applications.</p>
 
-    <div class="topmiddle">
+<h3 id="efficient">Efficient</h3>
 
-      <div style="margin: 8px 6px 2px 8px;
-                  font-size: 36px;">Avian</div>
-      <span style="font-style: italic; margin: 6px 6px 0px 8px;"
-            >A lightweight alternative to Java</span>
-      <!-- hack for IE: --><hr/>
+<p>The VM is implemented from scratch and designed to be both fast and small.</p>
 
-    </div>
-    <!-- end top -->
-    
-    <!-- start body -->  
-    <div class="middle">
-      <div style="max-width: 640px">
-      
-      
-<h2>About Avian</h2>
-<p>
-  Avian is a lightweight virtual machine and class library designed to
-  provide a useful subset of Java's features, suitable for building
-  self-contained applications.
-</p>
-
-<h3>Efficient</h3>
-<p>
-  The VM is implemented from scratch and designed to be both fast and
-  small.
-</p>
 <ul>
   <li>Just-In-Time (JIT) compilation for fast method execution</li>
-  <li>Generational, copying garbage collection ensures short pause
-  times and good spatial locality</li>
-  <li>Thread-local heaps provide O(1) memory allocation with no
-  synchronization overhead</li>
-  <li>Null pointer dereferences are handled via OS signals to avoid
-  unecessary branches</li>
+  <li>Generational, copying garbage collection ensures short pause times and good spatial locality</li>
+  <li>Thread-local heaps provide O(1) memory allocation with no synchronization overhead</li>
+  <li>Null pointer dereferences are handled via OS signals to avoid unecessary branches</li>
 </ul>
-<p>
-  The class library is designed to be as loosely coupled as possible,
-  allowing tools
-  like <a href="http://proguard.sourceforge.net/">ProGuard</a> to
-  aggressively isolate the minimum code needed for an application.
-  This translates to smaller downloads and faster startup.
-</p>
 
-<h3>Portable</h3>
-<p>
-  Platform-specific code is hidden behind a generic interface, so
-  adding support for new OSes is easy.  Avian currently supports Linux
-  (i386, x86_64, and ARM), Windows (i386 and x86_64), OS X (i386 and
-  x86_64), iOS (i386 and ARM), and FreeBSD (i386 and x86_64).
-</p>
-<p>
-  The only third party dependency beyond OS-provided libraries
-  is <a href="http://zlib.net/">zlib</a>, which is itself very
-  portable.  Although the VM is written in C++, it does not depend on
-  the C++ standard library, and is therefore robust in the face of ABI
-  changes.
-</p>
+<p>The class library is designed to be as loosely coupled as possible, allowing tools like ProGuard to aggressively isolate the minimum code needed for an application. This translates to smaller downloads and faster startup.</p>
 
-<h3>Embeddable</h3>
-<p>
-  Not only can applications embed the VM, but the VM itself supports
-  class and resource loading from embedded jar files.  This means you
-  can produce a single executable containing your entire application,
-  thus simplifying the installation process.
-</p>
+<h3 id="portable">Portable</h3>
 
+<p>Platform-specific code is hidden behind a generic interface, so adding support
+for new OSes is easy. Avian currently supports:</p>
 
+<ul>
+  <li>Linux (i386, x86_64, and ARM),</li>
+  <li>Windows (i386 and x86_64),</li>
+  <li>OS X (i386 and x86_64),</li>
+  <li>iOS (i386 and ARM), and</li>
+  <li>FreeBSD (i386 and x86_64).</li>
+</ul>
 
+<p>The only third party dependency beyond OS-provided libraries is zlib, which is
+itself very portable. Although the VM is written in C++, it does not depend on
+the C++ standard library, and is therefore robust in the face of ABI changes.</p>
+
+<h3 id="embeddable">Embeddable</h3>
+
+<p>Not only can applications embed the VM, but the VM itself supports class and
+resource loading from embedded jar files. This means you can produce a single
+executable containing your entire application, thus simplifying the installation
+process.</p>
+</section>
+<section id="-ownload"><h2 id="download">Download</h2>
+
+<h3 id="current-release">Current Release</h3>
+
+<p>The latest release is version 1.1.0. As of this release, everything should work
+as advertised on the supported platforms. Please post to the
+<a href="http://groups.google.com/group/avian">discussion group</a> if you have any problems.</p>
+
+<p><a href="http://localhost:4000/avian-web/avian-1.1.0.tar.bz2">Download Avian 1.1.0</a>
+(1496K)</p>
+
+<p>Recent changes:</p>
+
+<ul>
+  <li>Lots of bugfixes throughout the code</li>
+  <li>Improved type safety for internal VM code</li>
+  <li>Update build files for recent platform SDKs</li>
+  <li>Add compatibility with recent OpenJDK releases</li>
+  <li>Add experimental CMake and Gradle build support</li>
+</ul>
+</section>
+<section id="-ocumentation"><h2 id="documentation">Documentation</h2>
+
+<ul>
+  <li><a href="https://github.com/ReadyTalk/avian/blob/41adb74eb1895c662920fdfb7467ce415d9fa0b7/README.md">Building</a></li>
+  <li><a href="/avian-web/javadoc-1.1.0/index.html">Avian Classpath Javadoc</a></li>
+</ul>
+</section>
+<section id="-oadmap"><h2 id="roadmap">Roadmap</h2>
+
+<h3 id="ideas-for-the-future">Ideas for the future</h3>
+
+<ul>
+  <li>Add java.lang.invoke support</li>
+  <li>Experiment with trace-based JIT compilation</li>
+  <li>Improve ahead-of-time compilation using <a href="http://llvm.org/">LLVM</a></li>
+  <li>Add support for escape analysis to determine where objects may be safely
+allocated on the stack instead of the heap</li>
+  <li>Rework memory allocation in garbage collector to improve performance in
+low memory situations (see <a href="http://groups.google.com/group/avian/browse_thread/thread/5b3f13bf198334b3">here</a> for details)</li>
+  <li>Support additional architectures such as 64-bit ARM</li>
+</ul>
+</section>
+<section id="-xamples"><h2 id="examples">Examples</h2>
+
+<p>Avian is well suited to building small, self-contained applications. To
+demonstrate this, we’ve taken a demo application from the Eclipse SCM repository
+and built it using Avian, <a href="http://proguard.sourceforge.net/">ProGuard</a>, and
+<a href="http://www.7-zip.org/sdk.html">LZMA</a>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Linux/x86_64</td>
+      <td><a href="../avian-web/swt-examples/linux-x86_64/example">download</a> (1049K)</td>
+    </tr>
+    <tr>
+      <td>Linux/i386</td>
+      <td><a href="../avian-web/swt-examples/linux-i386/example">download</a> (973K)</td>
+    </tr>
+    <tr>
+      <td>Linux/ARM</td>
+      <td><a href="../avian-web/swt-examples/linux-arm/example">download</a> (882K)</td>
+    </tr>
+    <tr>
+      <td>OS X/x86_64</td>
+      <td><a href="../avian-web/swt-examples/macosx-x86_64/example">download</a> (1066K)</td>
+    </tr>
+    <tr>
+      <td>OS X/i386</td>
+      <td><a href="../avian-web/swt-examples/macosx-i386/example">download</a> (1053K)</td>
+    </tr>
+    <tr>
+      <td>Windows/x86_64</td>
+      <td><a href="../avian-web/swt-examples/windows-x86_64/example.exe">download</a> (1111K)</td>
+    </tr>
+    <tr>
+      <td>Windows/i386</td>
+      <td><a href="../avian-web/swt-examples/windows-i386/example.exe">download</a> (1072K)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="building">Building</h3>
+
+<p>If you’d like to build this example yourself, try the following:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Set the platform and swt_zip environment variables according to the</span>
+<span class="c"># following table:</span>
+<span class="c">#</span>
+<span class="c"># platform               swt_zip</span>
+<span class="c"># --------               -------</span>
+<span class="c"># linux-x86_64           swt-4.3-gtk-linux-x86_64.zip</span>
+<span class="c"># linux-i386             swt-4.3-gtk-linux-x86.zip</span>
+<span class="c"># linux-arm              swt-4.3-gtk-linux-arm.zip</span>
+<span class="c"># macosx-x86_64          swt-4.3-cocoa-macosx-x86_64.zip</span>
+<span class="c"># macosx-i386            swt-4.3-cocoa-macosx.zip</span>
+<span class="c"># windows-x86_64         swt-4.3-win32-win32-x86_64.zip</span>
+<span class="c"># windows-i386           swt-4.3-win32-win32-x86.zip</span>
+
+mkdir work
+<span class="nb">cd </span>work
+curl -Of http://oss.readytalk.com/avian-web/proguard4.11.tar.gz
+tar xzf proguard4.11.tar.gz
+curl -Of http://oss.readytalk.com/avian-web/lzma920.tar.bz2
+<span class="o">(</span>mkdir -p lzma-920 <span class="o">&amp;&amp;</span> <span class="nb">cd </span>lzma-920 <span class="o">&amp;&amp;</span> tar xjf ../lzma920.tar.bz2<span class="o">)</span>
+curl -Of http://oss.readytalk.com/avian-web/<span class="k">${</span><span class="nv">swt_zip</span><span class="k">}</span>
+mkdir -p swt/<span class="k">${</span><span class="nv">platform</span><span class="k">}</span>
+unzip -d swt/<span class="k">${</span><span class="nv">platform</span><span class="k">}</span> <span class="k">${</span><span class="nv">swt_zip</span><span class="k">}</span>
+curl -Of http://oss.readytalk.com/avian-web/avian-1.1.0.tar.bz2
+tar xjf avian-1.1.0.tar.bz2
+curl -Of http://oss.readytalk.com/avian-web/avian-swt-examples-1.1.0.tar.bz2
+tar xjf avian-swt-examples-1.1.0.tar.bz2
+<span class="c"># needed only for 32-bit Windows builds:</span>
+git clone https://github.com/ReadyTalk/win32.git
+<span class="c"># needed only for 64-bit Windows builds:</span>
+git clone https://github.com/ReadyTalk/win64.git
+<span class="nb">cd </span>avian-swt-examples
+make <span class="nv">lzma</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/../lzma-920 full-platform<span class="o">=</span><span class="k">${</span><span class="nv">platform</span><span class="k">}</span> example</code></pre></div>
+</section>
+<section id="-icense"><h2 id="license">License</h2>
+
+<h3 id="permissive-bsdischttpchoosealicensecomlicensesisc---style-license">Permissive <a href="http://choosealicense.com/licenses/isc/">BSD/ISC</a> - style license:</h3>
+
+<p>Copyright (c) 2008-2014, Avian Contributors</p>
+
+<p>Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.</p>
+
+<p>THE SOFTWARE IS PROVIDED “AS IS” AND THE AUTHORS DISCLAIM ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</p>
+</section>
+
+        </article>
+        <div class="col-md-2">
+          <div id="navbar" class="bs-docs-sidebar hidden-print hidden-xs hidden-sm">
+            <ul id="sidebar" class="nav bs-docs-sidenav"
+            </ul>
+          </div>
+        </div>
       </div>
-      <!-- hack for IE: --><hr/>
-
     </div>
-    <!-- end body -->
-
-    <!-- start icons -->
-<!-- this is a bit distracting, so I'm leaving it out
-    <div class="icons">
-
-
-      <a href="http://validator.w3.org/check/referer">
-        <img class="icon" src="http://www.w3.org/Icons/valid-xhtml11"
-             width="88" height="31" alt="Valid XHTML 1.1"/>
-      </a>
-
-    </div> -->
-    <!-- end icons -->
-
-    <!-- start navigation sidebar -->
-    <div class="left">
-
-      <ul>
-
-        <li><div class="les">about</div></li>
-        <li><div class="le"><a href="status.html">status</a></div></li>
-        <li><div class="le"><a href="examples.html">examples</a></div></li>
-
-        <li><div class="le">code</div>
-
-          <ul>
-
-            <li><div class="le"><a href="https://github.com/ReadyTalk/avian">repository</a></div></li>
-            <li><div class="le"><a href="license.html">license</a></div></li>
-
-          </ul>
-        </li>
-
-        <li><div class="le">documentation</div>
-
-          <ul>
-
-            <li><div class="le"><a href="https://github.com/ReadyTalk/avian/blob/41adb74eb1895c662920fdfb7467ce415d9fa0b7/README.md">building</a></div></li>
-            <li><div class="le"><a href="../avian-web/javadoc-1.1.0/index.html">javadoc</a></div></li>
-
-          </ul>
-        </li>
-
-        <li><div class="le"><a href="http://groups.google.com/group/avian">discussion</a></div></li>
-
-      </ul>
-
-    </div>
-    <!-- end navigation sidebar -->
-
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/avian/javascripts/main.js"></script>
   </body>
 </html>
 
