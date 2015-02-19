@@ -23,6 +23,7 @@
 #  define UNICODE
 
 #  include <windows.h>
+#  include <shlwapi.h>
 #  include <io.h>
 #  include <direct.h>
 #  include <share.h>
@@ -384,13 +385,22 @@ Java_java_io_File_createNewFile(JNIEnv* e, jclass, jstring path)
 extern "C" JNIEXPORT void JNICALL
 Java_java_io_File_delete(JNIEnv* e, jclass, jstring path)
 {
-  string_t chars = getChars(e, path);
-  if (chars) {
-    int r = REMOVE(chars);
+  string_t pathChars = getChars(e, path);
+  if (pathChars) {
+    int r;
+#ifdef PLATFORM_WINDOWS
+    if (PathIsDirectory(pathChars)) {
+      r = !RemoveDirectory(pathChars);
+    } else {
+#endif
+    r  = REMOVE(pathChars);
+#ifdef PLATFORM_WINDOWS
+    }
+#endif
     if (r != 0) {
       throwNewErrno(e, "java/io/IOException");
     }
-    releaseChars(e, path, chars);
+    releaseChars(e, path, pathChars);
   }
 }
 
