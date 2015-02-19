@@ -733,7 +733,7 @@ ifeq ($(platform),windows)
 	exe-suffix = .exe
 	rpath =
 
-	lflags = -L$(lib) $(common-lflags) -lws2_32 -liphlpapi -mconsole
+	lflags = -L$(lib) $(common-lflags) -lws2_32 -liphlpapi -mconsole -lshlwapi
 	cflags = -I$(inc) $(common-cflags) -DWINVER=0x0500
 
 	ifeq (,$(filter mingw32 cygwin,$(build-platform)))

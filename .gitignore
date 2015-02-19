@@ -1,5 +1,5 @@
 .gdb_history
-build
+/build
 *~
 .classpath
 .project
@@ -9,6 +9,9 @@ bin
 /distrib
 *.pdb
 *.swp
+/.gradle
 /*.sublime-*
 workspace/
 src/.cproject
+/cmake-build
+/cmake-build
