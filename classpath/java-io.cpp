@@ -385,8 +385,17 @@ extern "C" JNIEXPORT void JNICALL
 Java_java_io_File_delete(JNIEnv* e, jclass, jstring path)
 {
   string_t chars = getChars(e, path);
+  int r;
   if (chars) {
-    int r = REMOVE(chars);
+#ifdef PLATFORM_WINDOWS
+    if (GetFileAttributes(chars) == FILE_ATTRIBUTE_DIRECTORY) {
+      r = !RemoveDirectory(chars);
+    } else {
+      r = REMOVE(chars);
+    }
+#else
+    r = REMOVE(chars);
+#endif
     if (r != 0) {
       throwNewErrno(e, "java/io/IOException");
     }
