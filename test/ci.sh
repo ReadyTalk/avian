@@ -66,7 +66,7 @@ install-deps
 
 if [[ "${1}" == "PUBLISH" ]]; then
   if is-mac; then
-    publish "macosx" "i386 x86_64"
+    publish "darwin" "i386 x86_64"
   elif [[ $(uname -s) == "Linux" ]]; then
     publish "linux windows" "i386 x86_64"
   fi
