@@ -33,15 +33,6 @@ run() {
   "${@}"
 }
 
-run_cmake() {
-  mkdir -p cmake-build
-  rm -rf cmake-build/*
-  cd  cmake-build
-  run cmake ${@} ..
-  run make -j4 check
-  cd ..
-}
-
 publish() {
   local platforms="${1}"
   local arches="${2}"
@@ -80,10 +71,6 @@ if [[ "${1}" == "PUBLISH" ]]; then
     publish "linux windows" "i386 x86_64"
   fi
 else
-  if [[ $(uname -o) != "Cygwin" ]]; then
-    run_cmake -DCMAKE_BUILD_TYPE=Debug
-  fi
-
   make_target=test
 
   run make jdk-test
