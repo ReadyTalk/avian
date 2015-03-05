@@ -14,7 +14,7 @@ apply plugin: 'java'
 apply plugin: 'artifactory-publish'
 
 enum SupportedOS implements OperatingSystem {
-  LINUX, WINDOWS, MACOSX;
+  LINUX, WINDOWS, DARWIN;
 
   public static final SupportedOS CURRENT;
 
@@ -22,8 +22,8 @@ enum SupportedOS implements OperatingSystem {
     String p = System.properties['os.name']
     switch(p.replaceAll(' ', '').toLowerCase()) {
       case ~/.*linux.*/:  CURRENT = LINUX; break;
-      case ~/.*darwin.*/: CURRENT = MACOSX; break;
-      case ~/.*osx.*/:    CURRENT = MACOSX; break;
+      case ~/.*darwin.*/: CURRENT = DARWIN; break;
+      case ~/.*osx.*/:    CURRENT = DARWIN; break;
       case ~/.*win.*/:    CURRENT = WINDOWS; break;
       default:
         String m = "SupportedOS: unrecognized platform: ${p}"
@@ -42,7 +42,7 @@ enum SupportedOS implements OperatingSystem {
   public boolean isCurrent() { return this == CURRENT }
   public boolean isFreeBSD() { return false }
   public boolean isLinux() { return this == LINUX }
-  public boolean isMacOsX() { return this == MACOSX }
+  public boolean isMacOsX() { return this == DARWIN }
   public boolean isSolaris() { return false }
   public boolean isWindows() { return this == WINDOWS }
 
