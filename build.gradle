@@ -5,6 +5,7 @@ buildscript {
 
   dependencies {
     classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.4'
+    classpath "com.readytalk.gradle:gradle-readytalk-ci:0.2.3"
   }
 }
 
@@ -12,6 +13,7 @@ apply plugin: 'native-component'
 apply plugin: 'ivy-publish'
 apply plugin: 'java'
 apply plugin: 'artifactory-publish'
+apply plugin: "com.readytalk.ci"
 
 enum SupportedOS implements OperatingSystem {
   LINUX, WINDOWS, DARWIN;
@@ -75,20 +77,12 @@ ext {
 
 repositories {
   ivy {
-    name "ivyLocal"
+    name "local"
     url "${System.env.HOME}/.ivy2/local"
     layout 'maven'
   }
 
-  ivy {
-    name "jcenter"
-    if(version.contains("SNAPSHOT")) {
-      url "http://oss.jfrog.org/artifactory/oss-snapshot-local"
-    } else {
-      url "http://oss.jfrog.org/artifactory/oss-release-local"
-    }
-    layout 'maven'
-  }
+  jcenter()
 }
 
 configurations {
@@ -175,13 +169,9 @@ jar {
   baseName "classpath-avian"
 }
 
-task install {
-  dependsOn assemble, publish
-}
-
 publishing {
   repositories {
-    add(project.repositories."ivyLocal")
+    add(project.repositories."local")
   }
 
   publications {
@@ -279,5 +269,5 @@ artifactory {
 }
 
 task wrapper(type: Wrapper) {
-  distributionUrl = 'http://services.gradle.org/distributions/gradle-2.0-bin.zip'
+  gradleVersion = '2.1'
 }
