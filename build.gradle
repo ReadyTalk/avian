@@ -83,6 +83,11 @@ repositories {
   }
 
   jcenter()
+
+  maven {
+    name 'JFrog OSS snapshot repo'
+    url  'https://oss.jfrog.org/oss-snapshot-local/'
+  }
 }
 
 configurations {
