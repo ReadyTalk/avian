@@ -82,11 +82,16 @@ repositories {
     layout 'maven'
   }
 
-  jcenter()
+  ivy {
+     name "jcenter"
+     url "http://oss.jfrog.org/artifactory/oss-release-local"
+     layout 'maven'
+  }
 
-  maven {
-    name 'JFrog OSS snapshot repo'
-    url  'https://oss.jfrog.org/oss-snapshot-local/'
+  ivy {
+    name "jcenter-snapshots"
+    url "http://oss.jfrog.org/artifactory/oss-snapshot-local"
+    layout 'maven'
   }
 }
 
