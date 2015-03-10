@@ -19,8 +19,8 @@ to use forward slashes in the path.
 #### on Mac OS X:
     $ export JAVA_HOME=$(/usr/libexec/java_home)
     $ make
-    $ build/macosx-x86_64/avian -cp build/macosx-x86_64/test Hello
-
+    $ build/darwin-x86_64/avian -cp build/darwin-x86_64/test Hello
+ 
 #### on Windows (MSYS):
     $ git clone git@github.com:ReadyTalk/win64.git ../win64
     $ export JAVA_HOME="C:/Program Files/Java/jdk1.7.0_45"
@@ -59,10 +59,10 @@ Supported Platforms
 
 Avian can currently target the following platforms:
 
-  * Linux (i386, x86_64, ARM, and ARM64)
+  * Linux (i386, x86_64, and ARM)
   * Windows (i386 and x86_64)
   * Mac OS X (i386 and x86_64)
-  * Apple iOS (i386, ARM, and ARM64)
+  * Apple iOS (i386 and ARM)
   * FreeBSD (i386, x86_64)
 
 
@@ -72,9 +72,9 @@ Building
 Build requirements include:
 
   * GNU make 3.80 or later
-  * GCC 4.6 or later
+  * GCC 3.4 or later (4.5.1 or later for Windows/x86_64)
       or LLVM Clang 3.1 or later (see use-clang option below)
-  * JDK 1.6 or later
+  * JDK 1.5 or later
   * MinGW 3.4 or later (only if compiling for Windows)
   * zlib 1.2.3 or later
 
@@ -85,11 +85,12 @@ The build is directed by a single makefile and may be influenced via
 certain flags described below, all of which are optional.
 
     $ make \
-        platform={linux,windows,macosx,ios,freebsd} \
-        arch={i386,x86_64,arm,arm64} \
+        platform={linux,windows,darwin,freebsd} \
+        arch={i386,x86_64,arm} \
         process={compile,interpret} \
         mode={debug,debug-fast,fast,small} \
         lzma=<lzma source directory> \
+        ios={true,false} \
         bootimage={true,false} \
         heapdump={true,false} \
         tails={true,false} \
@@ -99,27 +100,34 @@ certain flags described below, all of which are optional.
         openjdk-src=<openjdk source directory> \
         android=<android source directory>
 
-  * `platform` - the target platform
+  * `platform` - the target platform  
     * _default:_ output of $(uname -s | tr [:upper:] [:lower:]),
-normalized in some cases (e.g. CYGWIN_NT-5.1 -> windows)
+normalized in some cases (e.g. CYGWIN_NT-5.1 -> windows)  
 
-  * `arch` - the target architecture
+  * `arch` - the target architecture  
     * _default:_ output of $(uname -m), normalized in some cases
 (e.g. i686 -> i386)
 
-  * `process` - choice between pure interpreter or JIT compiler
+  * `process` - choice between pure interpreter or JIT compiler  
     * _default:_ compile
 
   * `mode` - which set of compilation flags to use to determine
 optimization level, debug symbols, and whether to enable
-assertions
+assertions  
     * _default:_ fast
 
   * `lzma` - if set, support use of LZMA to compress embedded JARs and
 boot images.  The value of this option should be a directory
 containing a recent LZMA SDK (available [here](http://www.7-zip.org/sdk.html)).  Currently, only version 9.20 of
-the SDK has been tested, but other versions might work.
+the SDK has been tested, but other versions might work.  
     * _default:_ not set
+
+  * `ios` - if true, cross-compile for iOS on OS X.  Note that
+non-jailbroken iOS devices do not allow JIT compilation, so only
+process=interpret or bootimage=true builds will run on such
+devices.  See [here](https://github.com/ReadyTalk/hello-ios) for an
+example of an Xcode project for iOS which uses Avian.  
+    * _default:_ false
 
   * `armv6` - if true, don't use any instructions newer than armv6.  By
 default, we assume the target is armv7 or later, and thus requires explicit
@@ -129,42 +137,42 @@ memory barrier instructions to ensure cache coherency
 class library and ahead-of-time compiled methods.  This option is
 only valid for process=compile builds.  Note that you may need to
 specify both build-arch=x86_64 and arch=x86_64 on 64-bit systems
-where "uname -m" prints "i386".
+where "uname -m" prints "i386".  
     * _default:_ false
 
   * `heapdump` - if true, implement avian.Machine.dumpHeap(String),
 which, when called, will generate a snapshot of the heap in a
 simple, ad-hoc format for memory profiling purposes.  See
-heapdump.cpp for details.
+heapdump.cpp for details.  
     * _default:_ false
 
   * `tails` - if true, optimize each tail call by replacing the caller's
 stack frame with the callee's.  This convention ensures proper
 tail recursion, suitable for languages such as Scheme.  This
-option is only valid for process=compile builds.
+option is only valid for process=compile builds.  
     * _default:_ false
 
   * `continuations` - if true, support continuations via the
 avian.Continuations methods callWithCurrentContinuation and
 dynamicWind.  See Continuations.java for details.  This option is
-only valid for process=compile builds.
+only valid for process=compile builds.  
     * _default:_ false
 
   * `use-clang` - if true, use LLVM's clang instead of GCC to build.
 Note that this does not currently affect cross compiles, only
-native builds.
+native builds.  
     * _default:_ false
 
   * `openjdk` - if set, use the OpenJDK class library instead of the
 default Avian class library.  See "Building with the OpenJDK Class
-Library" below for details.
+Library" below for details.  
     * _default:_ not set
 
   * `openjdk-src` - if this and the openjdk option above are both set,
 build an embeddable VM using the OpenJDK class library.  The JNI
 components of the OpenJDK class library will be built from the
 sources found under the specified directory.  See "Building with
-the OpenJDK Class Library" below for details.
+the OpenJDK Class Library" below for details.  
     * _default:_ not set
 
   * `android` - if set, use the Android class library instead of the
@@ -179,12 +187,6 @@ bootimage enabled on Linux/i386 would be built in
 _build/linux-i386-debug-bootimage_.  This allows you to build with
 several different sets of options independently and even
 simultaneously without doing a clean build each time.
-
-Note that not all combinations of these flags are valid.  For instance,
-non-jailbroken iOS devices do not allow JIT compilation, so only
-process=interpret or bootimage=true builds will run on such
-devices.  See [here](https://github.com/ReadyTalk/hello-ios) for an
-example of an Xcode project for iOS which uses Avian.
 
 If you are compiling for Windows, you may either cross-compile using
 MinGW or build natively on Windows under MSYS or Cygwin.
@@ -226,25 +228,24 @@ still need to have GCC installed - MSVC is only used to compile the
 C++ portions of the VM, while the assembly code and helper tools are
 built using GCC.
 
-*Note that the MSVC build isn't tested regularly, so is fairly likely to be broken.*
-
-Avian targets MSVC 11 and above (it uses c++ features not available in older versions).
+The MSVC build has been tested with Visual Studio Express Edition
+versions 8, 9, and 10.  Other versions may also work.
 
 To build with MSVC, install Cygwin as described above and set the
 following environment variables:
 
-    $ export PATH="/usr/local/bin:/usr/bin:/bin:/usr/X11R6/bin:/cygdrive/c/Program Files/Microsoft Visual Studio 11.0/Common7/IDE:/cygdrive/c/Program Files/Microsoft Visual Studio 11.0/VC/BIN:/cygdrive/c/Program Files/Microsoft Visual Studio 11.0/Common7/Tools:/cygdrive/c/WINDOWS/Microsoft.NET/Framework/v3.5:/cygdrive/c/WINDOWS/Microsoft.NET/Framework/v2.0.50727:/cygdrive/c/Program Files/Microsoft Visual Studio 11.0/VC/VCPackages:/cygdrive/c/Program Files/Microsoft SDKs/Windows/v6.0A/bin:/cygdrive/c/WINDOWS/system32:/cygdrive/c/WINDOWS:/cygdrive/c/WINDOWS/System32/Wbem"
-    $ export LIBPATH="C:\WINDOWS\Microsoft.NET\Framework\v3.5;C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727;C:\Program Files\Microsoft Visual Studio 11.0\VC\LIB;"
-    $ export VCINSTALLDIR="C:\Program Files\Microsoft Visual Studio 11.0\VC"
-    $ export LIB="C:\Program Files\Microsoft Visual Studio 11.0\VC\LIB;C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib;"
-    $ export INCLUDE="C:\Program Files\Microsoft Visual Studio 11.0\VC\INCLUDE;C:\Program Files\Microsoft SDKs\Windows\v6.0A\include;"
+    $ export PATH="/usr/local/bin:/usr/bin:/bin:/usr/X11R6/bin:/cygdrive/c/Program Files/Microsoft Visual Studio 9.0/Common7/IDE:/cygdrive/c/Program Files/Microsoft Visual Studio 9.0/VC/BIN:/cygdrive/c/Program Files/Microsoft Visual Studio 9.0/Common7/Tools:/cygdrive/c/WINDOWS/Microsoft.NET/Framework/v3.5:/cygdrive/c/WINDOWS/Microsoft.NET/Framework/v2.0.50727:/cygdrive/c/Program Files/Microsoft Visual Studio 9.0/VC/VCPackages:/cygdrive/c/Program Files/Microsoft SDKs/Windows/v6.0A/bin:/cygdrive/c/WINDOWS/system32:/cygdrive/c/WINDOWS:/cygdrive/c/WINDOWS/System32/Wbem"
+    $ export LIBPATH="C:\WINDOWS\Microsoft.NET\Framework\v3.5;C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727;C:\Program Files\Microsoft Visual Studio 9.0\VC\LIB;"
+    $ export VCINSTALLDIR="C:\Program Files\Microsoft Visual Studio 9.0\VC"
+    $ export LIB="C:\Program Files\Microsoft Visual Studio 9.0\VC\LIB;C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib;"
+    $ export INCLUDE="C:\Program Files\Microsoft Visual Studio 9.0\VC\INCLUDE;C:\Program Files\Microsoft SDKs\Windows\v6.0A\include;"
 
 Adjust these definitions as necessary according to your MSVC
 installation.
 
 Finally, build with the msvc flag set to the MSVC tool directory:
 
-    $ make msvc="/cygdrive/c/Program Files/Microsoft Visual Studio 11.0/VC"
+    $ make msvc="/cygdrive/c/Program Files/Microsoft Visual Studio 9.0/VC"
 
 
 Building with the OpenJDK Class Library
@@ -353,20 +354,103 @@ but have not yet been tested.
 
 Building with the Android Class Library
 ---------------------------------------
+
 As an alternative to both the Avian and OpenJDK class libaries, you
-can also build with the Android class library. Now it should work on Linux, OS X and Windows.
+can also build with the Android class library on some platforms
+(currently Linux works and OS X mostly works).  To build this way, do
+the following, starting from the Avian directory:
 
-The simpliest way to build Avian with Android classpath is to use `avian-pack` project: https://github.com/bigfatbrowncat/avian-pack
+    cd ..
+    mkdir -p android/system android/external
+    cd android
 
-Avian-pack consists of Avian itself with some Android components (such as libcore and icu4c). 
+    git clone https://android.googlesource.com/platform/bionic
+    (cd bionic && \
+       git checkout 84983592ade3ec7d72d082262fb6646849979bfc)
+    
+    git clone https://android.googlesource.com/platform/system/core \
+      system/core
+    (cd system/core && \
+       git checkout fafcabd0dd4432de3c7f5956edec23f6ed241b56)
 
-Note that we use the upstream OpenSSL repository and apply the
+    git clone https://android.googlesource.com/platform/external/fdlibm \
+      external/fdlibm
+    (cd external/fdlibm && \
+       git checkout 0da5f683c9ddc9442af3b389b4220e91ccffb320)
+
+    git clone https://android.googlesource.com/platform/external/icu4c \
+      external/icu4c
+    (cd external/icu4c && \
+       git checkout 8fd45e08f1054d80a356ef8aa05659a2ba84707c)
+
+    git clone https://android.googlesource.com/platform/libnativehelper
+    (cd libnativehelper && \
+       git checkout cf5ac0ec696fce7fac6b324ec7d4d6da217e501c)
+
+    git clone https://android.googlesource.com/platform/external/openssl \
+      external/openssl
+    (cd external/openssl && \
+       git checkout 7b972f1aa23172c4430ada7f3236fa1fd9b31756)
+
+    git clone https://android.googlesource.com/platform/external/zlib \
+      external/zlib
+    (cd external/zlib && \
+       git checkout 15b6223aa57a347ce113729253802cb2fdeb4ad0)
+
+    git clone git://git.openssl.org/openssl.git openssl-upstream
+    (cd openssl-upstream && \
+       git checkout OpenSSL_1_0_1e)
+
+    git clone https://github.com/dicej/android-libcore64 libcore
+
+    curl -Of http://oss.readytalk.com/avian/expat-2.1.0.tar.gz
+    (cd external && tar xzf ../expat-2.1.0.tar.gz && mv expat-2.1.0 expat)
+
+    (cd external/expat && CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure \
+       --enable-static && make)
+
+    (cd external/fdlibm && (mv makefile.in Makefile.in || true) \
+       && CFLAGS=-fPIC bash configure && make)
+
+    (cd external/icu4c && CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure \
+       --enable-static && make)
+
+NB: use 'CC="gcc -fPIC" ./Configure darwin64-x86_64-cc' when building
+for x86_64 OS X instead of 'CC="gcc -fPIC" ./config':
+
+    (cd openssl-upstream \
+       && (for x in \
+               progs \
+               handshake_cutthrough \
+               jsse \
+               channelid \
+               eng_dyn_dirs \
+               fix_clang_build \
+               tls12_digests \
+               alpn; \
+             do patch -p1 < ../external/openssl/patches/$x.patch; done) \
+       && CC="gcc -fPIC" ./config && make)
+
+    cd ../avian
+    make android=$(pwd)/../android test
+
+Note that we use https://github.com/dicej/android-libcore64 above
+instead of the upstream
+https://android.googlesource.com/platform/libcore repository, since
+the former has patches to provide better support for non-Linux platforms.
+
+Also note that we use the upstream OpenSSL repository and apply the
 Android patches to it.  This is because it is not clear how to build
 the Android fork of OpenSSL directly without checking out and building
 the entire platform.  As of this writing, the patches apply cleanly
-against OpenSSL 1.0.1h, so that's the tag we check out, but this may
+against OpenSSL 1.0.1e, so that's the tag we check out, but this may
 change in the future when the Android fork rebases against a new
 OpenSSL version.
+
+Finally, we specify specific commit hashes for each repository which
+are known to work.  Later versions may also work, but have not been
+tested.
+
 
 Installing
 ----------
@@ -433,37 +517,37 @@ setting the boot classpath to "[bootJar]".
     $ cat >embedded-jar-main.cpp <<EOF
     #include "stdint.h"
     #include "jni.h"
-    #include "stdlib.h"
-
+	#include "stdlib.h" 
+    
     #if (defined __MINGW32__) || (defined _MSC_VER)
     #  define EXPORT __declspec(dllexport)
     #else
     #  define EXPORT __attribute__ ((visibility("default"))) \
       __attribute__ ((used))
     #endif
-
+    
     #if (! defined __x86_64__) && ((defined __MINGW32__) || (defined _MSC_VER))
     #  define SYMBOL(x) binary_boot_jar_##x
     #else
     #  define SYMBOL(x) _binary_boot_jar_##x
     #endif
-
+    
     extern "C" {
-
+    
       extern const uint8_t SYMBOL(start)[];
       extern const uint8_t SYMBOL(end)[];
-
+    
       EXPORT const uint8_t*
       bootJar(unsigned* size)
       {
         *size = SYMBOL(end) - SYMBOL(start);
         return SYMBOL(start);
       }
-
+    
     } // extern "C"
-
-    extern "C" void __cxa_pure_virtual(void) { abort(); }
-
+	
+	extern "C" void __cxa_pure_virtual(void) { abort(); }
+    
     int
     main(int ac, const char** av)
     {
@@ -471,17 +555,17 @@ setting the boot classpath to "[bootJar]".
       vmArgs.version = JNI_VERSION_1_2;
       vmArgs.nOptions = 1;
       vmArgs.ignoreUnrecognized = JNI_TRUE;
-
+    
       JavaVMOption options[vmArgs.nOptions];
       vmArgs.options = options;
-
+    
       options[0].optionString = const_cast<char*>("-Xbootclasspath:[bootJar]");
-
+    
       JavaVM* vm;
       void* env;
       JNI_CreateJavaVM(&vm, &env, &vmArgs);
       JNIEnv* e = static_cast<JNIEnv*>(env);
-
+    
       jclass c = e->FindClass("Hello");
       if (not e->ExceptionCheck()) {
         jmethodID m = e->GetStaticMethodID(c, "main", "([Ljava/lang/String;)V");
@@ -493,21 +577,21 @@ setting the boot classpath to "[bootJar]".
               for (int i = 1; i < ac; ++i) {
                 e->SetObjectArrayElement(a, i-1, e->NewStringUTF(av[i]));
               }
-
+              
               e->CallStaticVoidMethod(c, m, a);
             }
           }
         }
       }
-
+    
       int exitCode = 0;
       if (e->ExceptionCheck()) {
         exitCode = -1;
         e->ExceptionDescribe();
       }
-
+    
       vm->DestroyJavaVM();
-
+    
       return exitCode;
     }
     EOF
@@ -519,8 +603,8 @@ __on Linux:__
 
 __on Mac OS X:__
 
-     $ g++ -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin \
-         -D_JNI_IMPLEMENTATION_ -c embedded-jar-main.cpp -o main.o
+     $ g++ -I$JAVA_HOME/include -D_JNI_IMPLEMENTATION_ -c embedded-jar-main.cpp \
+         -o main.o
 
 __on Windows:__
 
@@ -637,7 +721,7 @@ using the OpenJDK library.)
 
 __6.__ Build the boot and code images.
 
-     $ ../build/linux-i386-bootimage/bootimage-generator \
+     $ ../build/linux-i386-bootimage/bootimage-generator
         -cp stage2 \
         -bootimage bootimage-bin.o \
         -codeimage codeimage-bin.o
@@ -661,13 +745,13 @@ containing them.  See the previous example for instructions.
     $ cat >bootimage-main.cpp <<EOF
     #include "stdint.h"
     #include "jni.h"
-
+    
     #if (defined __MINGW32__) || (defined _MSC_VER)
     #  define EXPORT __declspec(dllexport)
     #else
     #  define EXPORT __attribute__ ((visibility("default")))
     #endif
-
+    
     #if (! defined __x86_64__) && ((defined __MINGW32__) || (defined _MSC_VER))
     #  define BOOTIMAGE_BIN(x) binary_bootimage_bin_##x
     #  define CODEIMAGE_BIN(x) binary_codeimage_bin_##x
@@ -675,31 +759,31 @@ containing them.  See the previous example for instructions.
     #  define BOOTIMAGE_BIN(x) _binary_bootimage_bin_##x
     #  define CODEIMAGE_BIN(x) _binary_codeimage_bin_##x
     #endif
-
+    
     extern "C" {
-
+    
       extern const uint8_t BOOTIMAGE_BIN(start)[];
       extern const uint8_t BOOTIMAGE_BIN(end)[];
-
+    
       EXPORT const uint8_t*
       bootimageBin(unsigned* size)
       {
         *size = BOOTIMAGE_BIN(end) - BOOTIMAGE_BIN(start);
         return BOOTIMAGE_BIN(start);
       }
-
+    
       extern const uint8_t CODEIMAGE_BIN(start)[];
       extern const uint8_t CODEIMAGE_BIN(end)[];
-
+    
       EXPORT const uint8_t*
       codeimageBin(unsigned* size)
       {
         *size = CODEIMAGE_BIN(end) - CODEIMAGE_BIN(start);
         return CODEIMAGE_BIN(start);
       }
-
+    
     } // extern "C"
-
+    
     int
     main(int ac, const char** av)
     {
@@ -707,21 +791,21 @@ containing them.  See the previous example for instructions.
       vmArgs.version = JNI_VERSION_1_2;
       vmArgs.nOptions = 2;
       vmArgs.ignoreUnrecognized = JNI_TRUE;
-
+    
       JavaVMOption options[vmArgs.nOptions];
       vmArgs.options = options;
-
+    
       options[0].optionString
         = const_cast<char*>("-Davian.bootimage=bootimageBin");
-
+    
       options[1].optionString
         = const_cast<char*>("-Davian.codeimage=codeimageBin");
-
+    
       JavaVM* vm;
       void* env;
       JNI_CreateJavaVM(&vm, &env, &vmArgs);
       JNIEnv* e = static_cast<JNIEnv*>(env);
-
+    
       jclass c = e->FindClass("Hello");
       if (not e->ExceptionCheck()) {
         jmethodID m = e->GetStaticMethodID(c, "main", "([Ljava/lang/String;)V");
@@ -733,25 +817,25 @@ containing them.  See the previous example for instructions.
               for (int i = 1; i < ac; ++i) {
                 e->SetObjectArrayElement(a, i-1, e->NewStringUTF(av[i]));
               }
-
+              
               e->CallStaticVoidMethod(c, m, a);
             }
           }
         }
       }
-
+    
       int exitCode = 0;
       if (e->ExceptionCheck()) {
         exitCode = -1;
         e->ExceptionDescribe();
       }
-
+    
       vm->DestroyJavaVM();
-
+    
       return exitCode;
     }
     EOF
-
+    
      $ g++ -I$JAVA_HOME/include -I$JAVA_HOME/include/linux \
          -D_JNI_IMPLEMENTATION_ -c bootimage-main.cpp -o main.o
 
