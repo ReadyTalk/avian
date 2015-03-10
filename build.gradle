@@ -77,9 +77,13 @@ ext {
   libDir = "${buildDir}/lib"
 
   isMaster = buildEnv.travisBranch == "master" && buildEnv.travisPullRequest == 'false'
-  isReleaseBranch = buildEnv.travisBranch ==~ /release_d+\.\d+\.\d+/ && buildEnv.travisPullRequest == 'false'
+  isReleaseBranch = buildEnv.travisBranch ==~ /release_\d+\.\d+\.\d+/ && buildEnv.travisPullRequest == 'false'
   isReleaseTag = buildEnv.travisTag ==~ /v\d+\.\d+\.\d+/
 }
+
+logger.info "master: $isMaster"
+logger.info "releasebranch: $isReleaseBranch"
+logger.info "releasetag: $isReleaseTag"
 
 if (!isReleaseTag) {
   version = version + '-SNAPSHOT'
@@ -311,3 +315,6 @@ bintray {
 task wrapper(type: Wrapper) {
   gradleVersion = '2.1'
 }
+
+ci.dependsOn publish
+
