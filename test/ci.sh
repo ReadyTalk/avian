@@ -42,7 +42,7 @@ publish() {
     local arch
     for arch in ${arches}; do
       echo "------ Publishing ${platform}-${arch} ------"
-      ./gradlew artifactoryPublish -Pplatform=${platform} -Parch=${arch}
+      ./gradlew ci -Pplatform=${platform} -Parch=${arch}
     done
   done
 }
