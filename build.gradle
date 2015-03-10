@@ -4,7 +4,8 @@ buildscript {
   }
 
   dependencies {
-    classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.4'
+    classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.0.1'
+    classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.1"
     classpath "com.readytalk.gradle:gradle-readytalk-ci:0.2.3"
   }
 }
@@ -12,7 +13,8 @@ buildscript {
 apply plugin: 'native-component'
 apply plugin: 'ivy-publish'
 apply plugin: 'java'
-apply plugin: 'artifactory-publish'
+apply plugin: "com.jfrog.bintray"
+apply plugin: "com.jfrog.artifactory"
 apply plugin: "com.readytalk.ci"
 
 enum SupportedOS implements OperatingSystem {
@@ -73,6 +75,14 @@ ext {
   java_home = java_home
 
   libDir = "${buildDir}/lib"
+
+  isMaster = buildEnv.travisBranch == "master" && buildEnv.travisPullRequest == 'false'
+  isReleaseBranch = buildEnv.travisBranch ==~ /release_d+\.\d+\.\d+/ && buildEnv.travisPullRequest == 'false'
+  isReleaseTag = buildEnv.travisTag ==~ /v\d+\.\d+\.\d+/
+}
+
+if (!isReleaseTag) {
+  version = version + '-SNAPSHOT'
 }
 
 repositories {
@@ -243,11 +253,7 @@ publishing {
 }
 
 artifactoryPublish {
-  onlyIf {
-    // TRAVIS_BRANCH reports master if it is a master build or a PR going to master
-    // TRAVIS_PULL_REQUEST reports false if not a pull request and the PR number if it is
-    System.env.'TRAVIS_BRANCH' == "master" && System.env.'TRAVIS_PULL_REQUEST' == "false"
-  }
+  onlyIf { isMaster || isReleaseBranch }
   dependsOn assemble
 }
 
@@ -275,6 +281,30 @@ artifactory {
         publications it.name
       }
     }
+  }
+}
+
+bintrayUpload.onlyIf { isReleaseBranch || isReleaseTag }
+
+bintray {
+  user = System.env.BINTRAY_USER
+  key = System.env.BINTRAY_API_KEY
+  dryRun = !isReleaseTag
+  pkg {
+    name = 'avian'
+    userOrg = 'readytalk'
+    repo = 'maven'
+    desc = """\
+           Avian is a lightweight virtual machine and class library designed to 
+           provide a useful subset of Java's features, suitable for building 
+           self-contained applications.
+           """.stripIndent()
+    websiteUrl = 'http://oss.readytalk.com/avian/'
+    issueTrackerUrl = 'https://github.com/ReadTalk/avian/issues'
+    vcsUrl = 'https://github.com/ReadTalk/avian.git'
+    licenses = ['ISC']
+    labels = ['avian', 'jvm', 'java']
+    version.vcsTag = buildEnv.travisTag
   }
 }
 
