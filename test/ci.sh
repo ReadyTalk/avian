@@ -6,6 +6,13 @@ root_dir=$(pwd)
 
 flags="${@}"
 
+is-travis() {
+  if [[ ${TRAVIS} == "true" && ${HAS_JOSH_K_SEAL_OF_APPROVAL} == "true" ]]; then
+    return 0
+  fi
+  return 1
+}
+
 is-mac() {
   if [[ $(uname -s) == "Darwin" || ${TRAVIS_OS_NAME} == "osx" ]]; then
     return 0
@@ -17,9 +24,11 @@ install-deps() {
   if is-mac; then
     echo "------ Installing dependencies for Mac ------"
   else
-    echo "------ Installing dependencies for Linux ------"
-    sudo apt-get update -qq
-    sudo apt-get install -y libc6-dev-i386 mingw-w64 gcc-mingw-w64-x86-64 g++-mingw-w64-i686 binutils-mingw-w64-x86-64 lib32z1-dev zlib1g-dev g++-mingw-w64-x86-64
+    if is-travis; then
+      echo "------ Installing dependencies for Linux ------"
+      sudo apt-get update -qq
+      sudo apt-get install -y libc6-dev-i386 mingw-w64 gcc-mingw-w64-x86-64 g++-mingw-w64-i686 binutils-mingw-w64-x86-64 lib32z1-dev zlib1g-dev g++-mingw-w64-x86-64
+    fi
   fi
 }
 
