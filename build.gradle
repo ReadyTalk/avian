@@ -225,6 +225,22 @@ publishing {
           type publishBinSuffix
           extension binSuffix
         }
+        descriptor {
+          withXml {
+            project.configurations.matching {
+              it.name =~ "windows-"
+            }.each { config ->
+              config.resolvedConfiguration.firstLevelModuleDependencies.each {  ResolvedDependency dep ->
+                def Map dependencyDetails = new HashMap<>()
+                dependencyDetails.put('org', dep.getModuleGroup())
+                dependencyDetails.put('name', dep.getModuleName())
+                dependencyDetails.put('rev', dep.getModuleVersion())
+                dependencyDetails.put('conf', dep.getConfiguration())
+                asNode().dependencies[0].appendNode('dependency', dependencyDetails)
+              }
+            }
+          }
+        }
       }
     }
 
