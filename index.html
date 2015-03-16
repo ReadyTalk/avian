@@ -48,10 +48,10 @@ applications.</p>
 for new OSes is easy. Avian currently supports:</p>
 
 <ul>
-  <li>Linux (i386, x86_64, and ARM),</li>
+  <li>Linux (i386, x86_64, ARM, and ARM64),</li>
   <li>Windows (i386 and x86_64),</li>
   <li>OS X (i386 and x86_64),</li>
-  <li>iOS (i386 and ARM), and</li>
+  <li>iOS (i386, x86_64, ARM, and ARM64), and</li>
   <li>FreeBSD (i386 and x86_64).</li>
 </ul>
 
@@ -70,33 +70,31 @@ process.</p>
 
 <h3 id="current-release">Current Release</h3>
 
-<p>The latest release is version 1.1.0. As of this release, everything should work
+<p>The latest release is version 1.2.0. As of this release, everything should work
 as advertised on the supported platforms. Please post to the
 <a href="http://groups.google.com/group/avian">discussion group</a> if you have any problems.</p>
 
-<p><a href="../avian-web/avian-1.1.0.tar.bz2">Download Avian 1.1.0</a>
-(1496K)</p>
+<p><a href="../avian-web/avian-1.2.0.tar.bz2">Download Avian 1.2.0</a>
+(552K)</p>
 
 <p>Recent changes:</p>
 
 <ul>
+  <li>Add support for ARM64 on Linux and iOS</li>
   <li>Lots of bugfixes throughout the code</li>
-  <li>Improved type safety for internal VM code</li>
-  <li>Update build files for recent platform SDKs</li>
-  <li>Add compatibility with recent OpenJDK releases</li>
-  <li>Add experimental CMake and Gradle build support</li>
+  <li>Improve compatibility with OpenJDK 8 class library</li>
+  <li>Improve compatibility with Android class library</li>
+  <li>Improve Gradle build support</li>
 </ul>
 </section>
 <section id="-ocumentation"><h2 id="documentation">Documentation</h2>
 
 <ul>
-  <li><a href="https://github.com/ReadyTalk/avian/blob/53eeccf7ef265957eaee9d4d52660baed203a58c/README.md">Building</a></li>
-  <li><a href="/avian-web/javadoc-1.1.0/index.html">Avian Classpath Javadoc</a></li>
+  <li><a href="https://github.com/ReadyTalk/avian/blob/d9650be5701becf7b5d2d38b48f445c655d8d04f/README.md">Building</a></li>
+  <li><a href="/avian-web/javadoc-1.2.0/index.html">Avian Classpath Javadoc</a></li>
 </ul>
 </section>
-<section id="-oadmap"><h2 id="roadmap">Roadmap</h2>
-
-<h3 id="ideas-for-the-future">Ideas for the future</h3>
+<section id="-deas"><h2 id="project-ideas">Project Ideas</h2>
 
 <ul>
   <li>Add java.lang.invoke support</li>
@@ -106,7 +104,6 @@ as advertised on the supported platforms. Please post to the
 allocated on the stack instead of the heap</li>
   <li>Rework memory allocation in garbage collector to improve performance in
 low memory situations (see <a href="http://groups.google.com/group/avian/browse_thread/thread/5b3f13bf198334b3">here</a> for details)</li>
-  <li>Support additional architectures such as 64-bit ARM</li>
 </ul>
 </section>
 <section id="-xamples"><h2 id="examples">Examples</h2>
@@ -126,15 +123,19 @@ and built it using Avian, <a href="http://proguard.sourceforge.net/">ProGuard</a
   <tbody>
     <tr>
       <td>Linux/x86_64</td>
-      <td><a href="../avian-web/swt-examples/linux-x86_64/example">download</a> (1049K)</td>
+      <td><a href="../avian-web/swt-examples/linux-x86_64/example">download</a> (1078K)</td>
     </tr>
     <tr>
       <td>Linux/i386</td>
-      <td><a href="../avian-web/swt-examples/linux-i386/example">download</a> (973K)</td>
+      <td><a href="../avian-web/swt-examples/linux-i386/example">download</a> (1030K)</td>
+    </tr>
+    <tr>
+      <td>Linux/ARM64</td>
+      <td><a href="../avian-web/swt-examples/linux-arm64/example">download</a> (1448K)</td>
     </tr>
     <tr>
       <td>Linux/ARM</td>
-      <td><a href="../avian-web/swt-examples/linux-arm/example">download</a> (882K)</td>
+      <td><a href="../avian-web/swt-examples/linux-arm/example">download</a> (884K)</td>
     </tr>
     <tr>
       <td>OS X/x86_64</td>
@@ -146,11 +147,11 @@ and built it using Avian, <a href="http://proguard.sourceforge.net/">ProGuard</a
     </tr>
     <tr>
       <td>Windows/x86_64</td>
-      <td><a href="../avian-web/swt-examples/windows-x86_64/example.exe">download</a> (1111K)</td>
+      <td><a href="../avian-web/swt-examples/windows-x86_64/example.exe">download</a> (1113K)</td>
     </tr>
     <tr>
       <td>Windows/i386</td>
-      <td><a href="../avian-web/swt-examples/windows-i386/example.exe">download</a> (1072K)</td>
+      <td><a href="../avian-web/swt-examples/windows-i386/example.exe">download</a> (1073K)</td>
     </tr>
   </tbody>
 </table>
@@ -166,6 +167,7 @@ and built it using Avian, <a href="http://proguard.sourceforge.net/">ProGuard</a
 <span class="c"># --------               -------</span>
 <span class="c"># linux-x86_64           swt-4.3-gtk-linux-x86_64.zip</span>
 <span class="c"># linux-i386             swt-4.3-gtk-linux-x86.zip</span>
+<span class="c"># linux-arm64            swt-4.3-gtk-linux-arm64.zip</span>
 <span class="c"># linux-arm              swt-4.3-gtk-linux-arm.zip</span>
 <span class="c"># macosx-x86_64          swt-4.3-cocoa-macosx-x86_64.zip</span>
 <span class="c"># macosx-i386            swt-4.3-cocoa-macosx.zip</span>
@@ -178,25 +180,25 @@ curl -Of http://oss.readytalk.com/avian-web/proguard4.11.tar.gz
 tar xzf proguard4.11.tar.gz
 curl -Of http://oss.readytalk.com/avian-web/lzma920.tar.bz2
 <span class="o">(</span>mkdir -p lzma-920 <span class="o">&amp;&amp;</span> <span class="nb">cd </span>lzma-920 <span class="o">&amp;&amp;</span> tar xjf ../lzma920.tar.bz2<span class="o">)</span>
-curl -Of http://oss.readytalk.com/avian-web/<span class="k">${</span><span class="nv">swt_zip</span><span class="k">}</span>
-mkdir -p swt/<span class="k">${</span><span class="nv">platform</span><span class="k">}</span>
-unzip -d swt/<span class="k">${</span><span class="nv">platform</span><span class="k">}</span> <span class="k">${</span><span class="nv">swt_zip</span><span class="k">}</span>
-curl -Of http://oss.readytalk.com/avian-web/avian-1.1.0.tar.bz2
-tar xjf avian-1.1.0.tar.bz2
-curl -Of http://oss.readytalk.com/avian-web/avian-swt-examples-1.1.0.tar.bz2
-tar xjf avian-swt-examples-1.1.0.tar.bz2
+curl -Of http://oss.readytalk.com/avian-web/<span class="si">${</span><span class="nv">swt_zip</span><span class="si">}</span>
+mkdir -p swt/<span class="si">${</span><span class="nv">platform</span><span class="si">}</span>
+unzip -d swt/<span class="si">${</span><span class="nv">platform</span><span class="si">}</span> <span class="si">${</span><span class="nv">swt_zip</span><span class="si">}</span>
+curl -Of http://oss.readytalk.com/avian-web/avian-1.2.0.tar.bz2
+tar xjf avian-1.2.0.tar.bz2
+curl -Of http://oss.readytalk.com/avian-web/avian-swt-examples-1.2.0.tar.bz2
+tar xjf avian-swt-examples-1.2.0.tar.bz2
 <span class="c"># needed only for 32-bit Windows builds:</span>
 git clone https://github.com/ReadyTalk/win32.git
 <span class="c"># needed only for 64-bit Windows builds:</span>
 git clone https://github.com/ReadyTalk/win64.git
 <span class="nb">cd </span>avian-swt-examples
-make <span class="nv">lzma</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/../lzma-920 full-platform<span class="o">=</span><span class="k">${</span><span class="nv">platform</span><span class="k">}</span> example</code></pre></div>
+make <span class="nv">lzma</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/../lzma-920 full-platform<span class="o">=</span><span class="si">${</span><span class="nv">platform</span><span class="si">}</span> example</code></pre></div>
 </section>
 <section id="-icense"><h2 id="license">License</h2>
 
 <h3 id="permissive-bsdischttpchoosealicensecomlicensesisc---style-license">Permissive <a href="http://choosealicense.com/licenses/isc/">BSD/ISC</a> - style license:</h3>
 
-<p>Copyright (c) 2008-2014, Avian Contributors</p>
+<p>Copyright (c) 2008-2015, Avian Contributors</p>
 
 <p>Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above

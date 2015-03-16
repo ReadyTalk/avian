@@ -7,7 +7,7 @@ out = _site
 work = ../
 tmp = /var/tmp
 
-version = 1.1.0
+version = 1.2.0
 
 gh-pages = ../gh-pages
 avian-web = ../readytalk.github.io/avian-web
@@ -23,6 +23,7 @@ swt-zip-map = \
 	linux-x86_64:swt-$(swt-version)-gtk-linux-x86_64.zip \
 	linux-i386:swt-$(swt-version)-gtk-linux-x86.zip \
 	linux-arm:swt-$(swt-version)-gtk-linux-arm.zip \
+	linux-arm64:swt-$(swt-version)-gtk-linux-arm64.zip \
 	macosx-x86_64:swt-$(swt-version)-cocoa-macosx-x86_64.zip \
 	macosx-i386:swt-$(swt-version)-cocoa-macosx.zip \
 	windows-x86_64:swt-$(swt-version)-win32-win32-x86_64.zip \
@@ -31,7 +32,8 @@ swt-zip-map = \
 test-host-map = \
 	linux-x86_64:$(USER):localhost:22 \
 	linux-i386:$(USER):localhost:22 \
-	linux-arm:$(USER):192.168.50.134:5555 \
+	linux-arm:$(USER):localhost:5556 \
+	linux-arm64:$(USER):localhost:7777 \
 	macosx-x86_64:joel.dice:192.168.50.40:22 \
 	macosx-i386:joel.dice:192.168.50.40:22 \
 	windows-x86_64:Joel:192.168.50.38:22 \
@@ -41,6 +43,7 @@ build-host-map = \
 	linux-x86_64:$(USER):localhost:22 \
 	linux-i386:$(USER):localhost:22 \
 	linux-arm:$(USER):localhost:22 \
+	linux-arm64:$(USER):localhost:22 \
 	macosx-x86_64:joel.dice:192.168.50.40:22 \
 	macosx-i386:joel.dice:192.168.50.40:22 \
 	windows-x86_64:$(USER):localhost:22 \
@@ -101,10 +104,10 @@ deploy-examples: build-examples
 
 .PHONY: deploy-avian
 deploy-avian:
-	(cd $(work)/avian && make version=$(version) tarball javadoc)
+	(cd $(work)/avian && make version=$(version) tarball && ./gradlew javadoc)
 	cp -a $(work)/avian/build/avian-$(version).tar.bz2 $(avian-web)/
 	mkdir -p $(avian-web)/javadoc-$(version)/
-	cp -a $(work)/avian/build/javadoc/* $(avian-web)/javadoc-$(version)/
+	cp -a $(work)/avian/build/docs/javadoc/* $(avian-web)/javadoc-$(version)/
 	(cd $(work)/avian-swt-examples && make version=$(version) tarball)
 	cp -a $(work)/avian/build/avian-swt-examples-$(version).tar.bz2 $(avian-web)/
 
@@ -173,8 +176,8 @@ ci-sequence = \
 	tar xjf avian-$(version).tar.bz2; \
 	$(call git-clone,$(1)) \
 	cd avian; \
-	arch=$(call arch,$(1)) platform=$(call platform,$(1)) skip_jdk_test=true \
-	  bash test/ci.sh; \
+	skip_jdk_test=true bash test/ci.sh \
+		arch=$(call arch,$(1)) platform=$(call platform,$(1)); \
 	cd && rm -rf $(call tmpdir,$(1));
 
 $(ci-tests):
