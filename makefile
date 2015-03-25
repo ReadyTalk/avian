@@ -691,6 +691,9 @@ ifeq ($(platform),android)
 endif
 
 ifeq ($(kernel),darwin)
+	ifeq (,$(JAVA_HOME))
+        	JAVA_HOME = $(shell /usr/libexec/java_home)
+	endif
 	target-format = macho
 	ifeq (${OSX_SDK_SYSROOT},)
 		OSX_SDK_SYSROOT = 10.6u
