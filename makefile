@@ -1,4 +1,5 @@
-MAKEFLAGS = -s
+MAKEFLAGS = 
+#-s
 
 name = avian
 version := $(shell grep version gradle.properties | cut -d'=' -f2)
@@ -237,6 +238,7 @@ ifneq ($(android),)
 		-D__DARWIN_UNIX03=1 \
 		-D__PROVIDE_FIXMES \
 		-DSTATIC_LIB \
+		-D__STDC_FORMAT_MACROS=1 \
 		-g3 \
 		-Werror \
 		-Wno-shift-count-overflow
