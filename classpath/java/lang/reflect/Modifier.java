@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2014, Avian Contributors
+/* Copyright (c) 2008-2015, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -32,6 +32,7 @@ public final class Modifier {
   public static boolean isProtected(int v) { return (v & PROTECTED) != 0; }
   public static boolean isStatic   (int v) { return (v &    STATIC) != 0; }
   public static boolean isFinal    (int v) { return (v &     FINAL) != 0; }
+  public static boolean isTransient(int v) { return (v & TRANSIENT) != 0; }
   public static boolean isSuper    (int v) { return (v &     SUPER) != 0; }
   public static boolean isNative   (int v) { return (v &    NATIVE) != 0; }
   public static boolean isAbstract (int v) { return (v &  ABSTRACT) != 0; }

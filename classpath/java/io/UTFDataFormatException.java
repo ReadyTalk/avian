@@ -8,10 +8,14 @@
    There is NO WARRANTY for this software.  See license.txt for
    details. */
 
-package java.nio.channels;
+package java.io;
 
-public class UnsupportedAddressTypeException extends IllegalArgumentException {
-  public UnsupportedAddressTypeException() {
-    super(null, null);
+public class UTFDataFormatException extends IOException {
+  public UTFDataFormatException(String s) {
+    super(s);
+  }
+	
+  public UTFDataFormatException() {
+    super();
   }
 }

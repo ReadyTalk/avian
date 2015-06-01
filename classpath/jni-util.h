@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2014, Avian Contributors
+/* Copyright (c) 2008-2015, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -72,6 +72,8 @@ typedef unsigned __int64 uint64_t;
 #define ARCH_x86_64
 #elif defined __arm__
 #define ARCH_arm
+#elif defined __aarch64__
+#define ARCH_arm64
 #endif
 
 #endif  // not _MSC_VER

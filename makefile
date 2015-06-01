@@ -87,8 +87,8 @@ ifeq ($(platform),macosx)
 endif
 
 ifeq ($(platform),ios)
-	ifeq ($(filter i386 arm arm64,$(arch)),)
-		x := $(error "please specify 'arch=i386', 'arch=arm', or 'arch=arm64' with 'platform=ios'")
+	ifeq ($(filter i386 x86_64 arm arm64,$(arch)),)
+		x := $(error "please specify 'arch=i386', 'arch=x86_64', 'arch=arm', or 'arch=arm64' with 'platform=ios'")
 	endif
 endif
 
@@ -354,13 +354,13 @@ ifneq ($(android),)
 
 	okio-java = $(android)/external/okhttp/okio/src/main/java
 	okio-javas := $(shell find $(okio-java) -name '*.java')
-	
+
 	bcpkix-java = $(android)/external/bouncycastle/bcpkix/src/main/java
 	bcpkix-javas := $(shell find $(bcpkix-java) -name '*.java')
 
 	bcprov-java = $(android)/external/bouncycastle/bcprov/src/main/java
 	bcprov-javas := $(shell find $(bcprov-java) -name '*.java')
-	
+
 	android-classes = \
 		$(call java-classes,$(luni-javas),$(luni-java),$(build)/android) \
 		$(call java-classes,$(crypto-javas),$(crypto-java),$(build)/android) \
@@ -747,10 +747,14 @@ ifeq ($(kernel),darwin)
 	rpath =
 
 	ifeq ($(platform),ios)
-		ifeq ($(arch),i386)
+		ifeq (,$(filter arm arm64,$(arch)))
 			target = iPhoneSimulator
 			sdk = iphonesimulator$(ios-version)
-			arch-flag = -arch i386
+			ifeq ($(arch),i386)
+				arch-flag = -arch i386
+			else
+				arch-flag = -arch x86_64
+			endif
 			release = Release-iphonesimulator
 		else
 			target = iPhoneOS
@@ -767,7 +771,8 @@ ifeq ($(kernel),darwin)
 		sdk-dir = $(platform-dir)/Developer/SDKs
 
 		ios-version := $(shell \
-				if test -d $(sdk-dir)/$(target)8.1.sdk; then echo 8.1; \
+				if test -d $(sdk-dir)/$(target)8.2.sdk; then echo 8.2; \
+			elif test -d $(sdk-dir)/$(target)8.1.sdk; then echo 8.1; \
 			elif test -d $(sdk-dir)/$(target)8.0.sdk; then echo 8.0; \
 			elif test -d $(sdk-dir)/$(target)7.1.sdk; then echo 7.1; \
 			elif test -d $(sdk-dir)/$(target)7.0.sdk; then echo 7.0; \
@@ -825,10 +830,18 @@ ifeq ($(kernel),darwin)
 	endif
 
 	ifeq ($(arch),x86_64)
-		classpath-extra-cflags += -arch x86_64
-		cflags += -arch x86_64
-		asmflags += -arch x86_64
-		lflags += -arch x86_64
+		ifeq ($(platform),ios)
+			classpath-extra-cflags += \
+				-arch x86_64 -miphoneos-version-min=$(ios-version)
+			cflags += -arch x86_64 -miphoneos-version-min=$(ios-version)
+			asmflags += -arch x86_64 -miphoneos-version-min=$(ios-version)
+			lflags += -arch x86_64 -miphoneos-version-min=$(ios-version)
+		else
+			classpath-extra-cflags += -arch x86_64
+			cflags += -arch x86_64
+			asmflags += -arch x86_64
+			lflags += -arch x86_64
+		endif
 	endif
 
 	cflags += -I$(JAVA_HOME)/include/darwin
@@ -1625,8 +1638,9 @@ jdk-test: $(test-dep) $(build)/classpath.jar $(build)/jdk-run-tests.sh $(build)/
 tarball:
 	@echo "creating build/avian-$(version).tar.bz2"
 	@mkdir -p build
-	(cd .. && tar --exclude=build --exclude='.*' --exclude='*~' -cjf \
-		avian/build/avian-$(version).tar.bz2 avian)
+	(cd .. && tar --exclude=build --exclude=cmake-build --exclude=distrib \
+		--exclude=lib --exclude='.*' --exclude='*~' \
+		-cjf avian/build/avian-$(version).tar.bz2 avian)
 
 .PHONY: clean-current
 clean-current:
@@ -1635,8 +1649,8 @@ clean-current:
 
 .PHONY: clean
 clean:
-	@echo "removing build"
-	rm -rf build
+	@echo "removing build directories"
+	rm -rf build cmake-build distrib lib
 
 ifeq ($(continuations),true)
 $(build)/compile-x86-asm.o: $(src)/continuations-x86.$(asm-format)
@@ -1679,7 +1693,7 @@ $(classpath-dep): $(classpath-sources) $(classpath-jar-dep)
 	@echo "compiling classpath classes"
 	@mkdir -p $(classpath-build)
 	classes="$(shell $(MAKE) -s --no-print-directory build=$(build) \
-		$(classpath-classes) arch=$(build-arch) platform=$(build-platform))"; \
+		$(classpath-classes) arch=$(build-arch) platform=$(bootimage-platform))"; \
 	if [ -n "$${classes}" ]; then \
 		$(javac) -source 1.6 -target 1.6 \
 			-d $(classpath-build) -bootclasspath $(boot-classpath) \

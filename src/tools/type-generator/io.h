@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2014, Avian Contributors
+/* Copyright (c) 2008-2015, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -120,11 +120,20 @@ class Output {
 
   virtual void write(const std::string& s) = 0;
 
-  void write(int i)
+  void write(int32_t i)
   {
     static const int Size = 32;
     char s[Size];
     int c UNUSED = vm::snprintf(s, Size, "%d", i);
+    assert(c > 0 and c < Size);
+    write(s);
+  }
+
+  void writeUnsigned(uint32_t i)
+  {
+    static const int Size = 32;
+    char s[Size];
+    int c UNUSED = vm::snprintf(s, Size, "%u", i);
     assert(c > 0 and c < Size);
     write(s);
   }

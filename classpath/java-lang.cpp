@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2014, Avian Contributors
+/* Copyright (c) 2008-2015, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -852,6 +852,12 @@ extern "C" JNIEXPORT jobjectArray JNICALL
 
 #elif defined ARCH_arm
   e->SetObjectArrayElement(array, index++, e->NewStringUTF("os.arch=arm"));
+
+#elif defined ARCH_arm64
+  e->SetObjectArrayElement(array, index++, e->NewStringUTF("os.arch=arm64"));
+
+#else
+#error "unknown architecture"
 
 #endif
 

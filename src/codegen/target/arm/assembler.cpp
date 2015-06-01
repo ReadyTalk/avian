@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2014, Avian Contributors
+/* Copyright (c) 2008-2015, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -95,7 +95,7 @@ void nextFrame(ArchitectureContext* con,
 
   if ((*start >> 20) == (TargetBytesPerWord == 8 ? 0xf94 : 0xe59)) {
     // skip stack overflow check
-    start += 3;
+    start += TargetBytesPerWord == 8 ? 4 : 3;
   }
 
   if (instruction <= start) {

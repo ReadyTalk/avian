@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2014, Avian Contributors
+/* Copyright (c) 2008-2015, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -172,6 +172,25 @@ public final class Character implements Comparable<Character> {
 
   public static boolean isISOControl(char ch) {
    return ch <= '\u001F' || (ch >= '\u007F' && ch <= '\u009F');
+  }
+
+  public static boolean isJavaIdentifierStart(char ch) {
+    return isLetter(ch) || ch == '$' || ch == '_';
+    //TODO: add if (getType(ch)==LETTER_NUMBER) || getType(ch)==CURRENCY_SYMBOL
+  }
+  
+  public static boolean isJavaIdentifierStart(int c) {
+    return canCastToChar(c) && isJavaIdentifierStart((char) c);
+  }
+  
+  public static boolean isJavaIdentifierPart(char ch) {
+    return isJavaIdentifierStart(ch) || isDigit(ch);
+	//TODO:Check for numeric letters (such as a Roman numeral character),combining marks,non-spacing marks
+	//add isIdentifierIgnorable(ch)
+  }
+
+  public static boolean isJavaIdentifierPart(int c) {
+    return canCastToChar(c) && isJavaIdentifierPart((char) c);
   }
 
   public static int toCodePoint(char high, char low) {

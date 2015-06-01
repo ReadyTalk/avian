@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2014, Avian Contributors
+/* Copyright (c) 2008-2015, Avian Contributors
 
    Permission to use, copy, modify, and/or distribute this software
    for any purpose with or without fee is hereby granted, provided
@@ -441,6 +441,11 @@ class MyClasspath : public Classpath {
     setObjectClass(t, c, type(t, GcJclass::Type));
     c->setName(t, name);
     c->setVmClass(t, class_);
+#ifdef HAVE_JclassClassLoader
+    if (class_->loader() != roots(t)->bootLoader()) {
+      c->setClassLoader(t, class_->loader());
+    }
+#endif
 
     return c;
   }
@@ -2400,20 +2405,20 @@ object makeJmethod(Thread* t,
                      0,
                      0,
                      declaredAnnotations,
-                     clazz,
+                     cast<GcJclass>(t, clazz),
                      slot,
-                     name,
-                     returnType,
+                     cast<GcString>(t, name),
+                     cast<GcJclass>(t, returnType),
                      parameterTypes,
                      exceptionTypes,
                      modifiers,
-                     signature,
+                     cast<GcString>(t, signature),
                      genericInfo,
-                     annotations,
-                     parameterAnnotations,
-                     annotationDefault,
+                     cast<GcByteArray>(t, annotations),
+                     cast<GcByteArray>(t, parameterAnnotations),
+                     cast<GcByteArray>(t, annotationDefault),
                      methodAccessor,
-                     root);
+                     cast<GcJmethod>(t, root));
 }
 
 object makeJconstructor(Thread* t,
@@ -2438,17 +2443,17 @@ object makeJconstructor(Thread* t,
                           0,
                           0,
                           declaredAnnotations,
-                          clazz,
+                          cast<GcJclass>(t, clazz),
                           slot,
                           parameterTypes,
                           exceptionTypes,
                           modifiers,
-                          signature,
+                          cast<GcString>(t, signature),
                           genericInfo,
-                          annotations,
-                          parameterAnnotations,
+                          cast<GcByteArray>(t, annotations),
+                          cast<GcByteArray>(t, parameterAnnotations),
                           constructorAccessor,
-                          root);
+                          cast<GcJconstructor>(t, root));
 }
 #endif  // HAVE_JexecutableHasRealParameterData
 
@@ -4562,6 +4567,12 @@ extern "C" AVIAN_EXPORT jobject JNICALL
   uintptr_t arguments[] = {reinterpret_cast<uintptr_t>(c)};
 
   return reinterpret_cast<jobject>(run(t, jvmGetProtectionDomain, arguments));
+}
+
+extern "C" AVIAN_EXPORT jobject JNICALL
+    EXPORT(JVM_GetResourceLookupCacheURLs)(Thread*, jobject)
+{
+  return 0;
 }
 
 extern "C" AVIAN_EXPORT void JNICALL
