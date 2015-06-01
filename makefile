@@ -1,4 +1,5 @@
-MAKEFLAGS = -s
+MAKEFLAGS = 
+#-s
 
 name = avian
 version := $(shell grep version gradle.properties | cut -d'=' -f2)
@@ -238,6 +239,7 @@ ifneq ($(android),)
 		-D__DARWIN_UNIX03=1 \
 		-D__PROVIDE_FIXMES \
 		-DSTATIC_LIB \
+		-D__STDC_FORMAT_MACROS=1 \
 		-g3 \
 		-Werror \
 		-Wno-shift-count-overflow
@@ -1734,7 +1736,7 @@ $(build)/android.dep: $(luni-javas) $(dalvik-javas) $(libart-javas) \
 		| (cd $(build)/android-src && $(jar) x)
 #	(cd android && $(jar) c *)	| (cd $(build)/android-src && $(jar) x)
 	find $(build)/android-src -name '*.java' > $(build)/android.txt
-	$(javac) -Xmaxerrs 1000 -d $(build)/android @$(build)/android.txt
+	$(javac) -J-Xms256m -J-Xmx256m -Xmaxerrs 1000 -d $(build)/android @$(build)/android.txt
 	rm $(build)/android/sun/misc/Unsafe* \
 		$(build)/android/java/lang/reflect/Proxy*
 	for x in $(luni-copied-nonjavas); \
