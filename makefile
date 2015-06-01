@@ -865,7 +865,7 @@ ifeq ($(platform),windows)
 	exe-suffix = .exe
 	rpath =
 
-	lflags = -L$(lib) $(common-lflags) -lws2_32 -liphlpapi -mconsole
+	lflags = -L$(lib) $(common-lflags) -lws2_32 -liphlpapi -mconsole -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic
 	cflags = -I$(inc) $(common-cflags) -DWINVER=0x0500 -U__STRICT_ANSI__
 
 	ifeq (,$(filter mingw32 cygwin,$(build-platform)))
@@ -1868,7 +1868,7 @@ else
 	$(dlltool) -z $(addsuffix .def,$(basename $(@))) $(^)
 	$(dlltool) -d $(addsuffix .def,$(basename $(@))) -e $(addsuffix .exp,$(basename $(@)))
 	$(ld) $(addsuffix .exp,$(basename $(@))) $(^) \
-		$(lflags) $(bootimage-lflags) -o $(@)
+		$(lflags) $(classpath-lflags) $(bootimage-lflags) -o $(@)
 endif
 	$(strip) $(strip-all) $(@)
 
