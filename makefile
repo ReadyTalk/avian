@@ -864,7 +864,7 @@ ifeq ($(platform),windows)
 	exe-suffix = .exe
 	rpath =
 
-	lflags = -L$(lib) $(common-lflags) -lws2_32 -liphlpapi -mconsole -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic
+	lflags = -L$(lib) -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic $(common-lflags) -lws2_32 -liphlpapi -mconsole
 	cflags = -I$(inc) $(common-cflags) -DWINVER=0x0500 -U__STRICT_ANSI__
 
 	ifeq (,$(filter mingw32 cygwin,$(build-platform)))
