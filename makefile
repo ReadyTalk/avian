@@ -241,7 +241,6 @@ ifneq ($(android),)
 		-DSTATIC_LIB \
 		-D__STDC_FORMAT_MACROS=1 \
 		-g3 \
-		-Werror \
 		-Wno-shift-count-overflow
 
 	# on Windows (in MinGW-based build) there are neither __BEGIN_DECLS nor __END_DECLS
@@ -444,7 +443,7 @@ endif
 # note that we suppress the non-virtual-dtor warning because we never
 # use the delete operator, which means we don't need virtual
 # destructors:
-warnings = -Wall -Wextra -Werror -Wunused-parameter -Winit-self \
+warnings = -Wall -Wextra -Wunused-parameter -Winit-self \
 	-Wno-non-virtual-dtor
 
 target-cflags = -DTARGET_BYTES_PER_WORD=$(pointer-size)
@@ -472,7 +471,7 @@ converter-cflags = -D__STDC_CONSTANT_MACROS -std=c++0x -Iinclude/ -Isrc/ \
 	-fno-rtti -fno-exceptions \
 	-DAVIAN_TARGET_ARCH=AVIAN_ARCH_UNKNOWN \
 	-DAVIAN_TARGET_FORMAT=AVIAN_FORMAT_UNKNOWN \
-	-Wall -Wextra -Werror -Wunused-parameter -Winit-self -Wno-non-virtual-dtor
+	-Wall -Wextra -Wunused-parameter -Winit-self -Wno-non-virtual-dtor
 
 cflags = $(build-cflags)
 
