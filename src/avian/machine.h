@@ -1062,7 +1062,7 @@ class Machine {
   JNIEnvVTable jniEnvVTable;
   uintptr_t* heapPool[ThreadHeapPoolSize];
   unsigned heapPoolIndex;
-  unsigned bootimageSize;
+  size_t bootimageSize;
 };
 
 void printTrace(Thread* t, GcThrowable* exception);
@@ -1703,9 +1703,6 @@ bool instanceOf(Thread* t, GcClass* class_, object o);
 template <class T>
 T* GcObject::as(Thread* t UNUSED)
 {
-  if (this == 0) {
-    return 0;
-  }
   assertT(t,
           t->m->unsafe || instanceOf(t,
                                      reinterpret_cast<GcClass*>(arrayBodyUnsafe(
@@ -2554,7 +2551,6 @@ inline void NO_RETURN throw_(Thread* t, GcThrowable* e)
   t->exception = e;
 
   if (objectClass(t, e) == type(t, GcOutOfMemoryError::Type)) {
-#ifdef AVIAN_HEAPDUMP
     if (not t->m->dumpedHeapOnOOM) {
       t->m->dumpedHeapOnOOM = true;
       const char* path = findProperty(t, "avian.heap.dump");
@@ -2566,7 +2562,6 @@ inline void NO_RETURN throw_(Thread* t, GcThrowable* e)
         }
       }
     }
-#endif  // AVIAN_HEAPDUMP
 
     if (AbortOnOutOfMemoryError) {
       fprintf(stderr, "OutOfMemoryError\n");

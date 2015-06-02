@@ -3338,12 +3338,11 @@ void boot(Thread* t)
         = makeMethod(t, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bootCode);
     PROTECT(t, bootMethod);
 
-#include "type-java-initializations.cpp"
+#    include "type-java-initializations.cpp"
+#    include "type-name-initializations.cpp"
 
-//#ifdef AVIAN_HEAPDUMP
-#include "type-name-initializations.cpp"
-    //#endif
   }
+
 }
 
 class HeapClient : public Heap::Client {
@@ -3810,10 +3809,10 @@ void Thread::init()
 
       void* imagep = m->libraries->resolve(symbolName);
       if (imagep) {
-        uint8_t* (*imageFunction)(unsigned*);
+        uint8_t* (*imageFunction)(size_t*);
         memcpy(&imageFunction, &imagep, BytesPerWord);
 
-        unsigned size;
+        size_t size = 0;
         uint8_t* imageBytes = imageFunction(&size);
         if (lzma) {
 #ifdef AVIAN_USE_LZMA
@@ -3830,7 +3829,7 @@ void Thread::init()
         if (codeFunctionName) {
           void* codep = m->libraries->resolve(codeFunctionName);
           if (codep) {
-            uint8_t* (*codeFunction)(unsigned*);
+            uint8_t* (*codeFunction)(size_t*);
             memcpy(&codeFunction, &codep, BytesPerWord);
 
             code = codeFunction(&size);
@@ -4041,6 +4040,8 @@ void enter(Thread* t, Thread::State s)
 
       t->state = s;
 
+      STORE_LOAD_MEMORY_BARRIER;
+
       if (t->m->exclusive) {
         ACQUIRE_LOCK;
 
@@ -4091,6 +4092,8 @@ void enter(Thread* t, Thread::State s)
       INCREMENT(&(t->m->activeCount), 1);
 
       t->state = s;
+
+      STORE_LOAD_MEMORY_BARRIER;
 
       if (t->m->exclusive) {
         // another thread has entered the exclusive state, so we

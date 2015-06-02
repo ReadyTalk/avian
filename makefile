@@ -42,9 +42,6 @@ endif
 ifeq ($(bootimage),true)
 	options := $(options)-bootimage
 endif
-ifeq ($(heapdump),true)
-	options := $(options)-heapdump
-endif
 ifeq ($(tails),true)
 	options := $(options)-tails
 endif
@@ -769,7 +766,8 @@ ifeq ($(kernel),darwin)
 		sdk-dir = $(platform-dir)/Developer/SDKs
 
 		ios-version := $(shell \
-				if test -d $(sdk-dir)/$(target)8.2.sdk; then echo 8.2; \
+				if test -d $(sdk-dir)/$(target)8.3.sdk; then echo 8.3; \
+			elif test -d $(sdk-dir)/$(target)8.2.sdk; then echo 8.2; \
 			elif test -d $(sdk-dir)/$(target)8.1.sdk; then echo 8.1; \
 			elif test -d $(sdk-dir)/$(target)8.0.sdk; then echo 8.0; \
 			elif test -d $(sdk-dir)/$(target)7.1.sdk; then echo 7.1; \
@@ -1239,7 +1237,8 @@ vm-sources = \
 	$(src)/classpath-$(classpath).cpp \
 	$(src)/builtin.cpp \
 	$(src)/jnienv.cpp \
-	$(src)/process.cpp
+	$(src)/process.cpp \
+	$(src)/heapdump.cpp
 
 vm-asm-sources = $(src)/$(arch).$(asm-format)
 
@@ -1294,7 +1293,6 @@ ifeq ($(process),compile)
 
 	vm-asm-sources += $(src)/compile-$(arch).$(asm-format)
 endif
-cflags += -DAVIAN_PROCESS_$(process)
 ifeq ($(aot-only),true)
 	cflags += -DAVIAN_AOT_ONLY
 endif
@@ -1310,11 +1308,7 @@ heapwalk-objects = \
 
 unittest-objects = $(call cpp-objects,$(unittest-sources),$(unittest),$(build)/unittest)
 
-ifeq ($(heapdump),true)
-	vm-sources += $(src)/heapdump.cpp
-	vm-heapwalk-objects = $(heapwalk-objects)
-	cflags += -DAVIAN_HEAPDUMP
-endif
+vm-heapwalk-objects = $(heapwalk-objects)
 
 ifeq ($(tails),true)
 	cflags += -DAVIAN_TAILS
@@ -1409,6 +1403,8 @@ ifneq ($(lzma),)
 		$(call generator-c-objects,$(lzma-encoder-lzma-sources),$(lzma)/C,$(build))
 
 	lzma-loader = $(build)/lzma/load.o
+
+	lzma-library = $(build)/libavian-lzma.a
 endif
 
 generator-cpp-objects = \
@@ -1586,11 +1582,11 @@ test-args = $(test-flags) $(input)
 
 .PHONY: build
 ifneq ($(supports_avian_executable),false)
-build: $(static-library) $(executable) $(dynamic-library) $(lzma-loader) \
+build: $(static-library) $(executable) $(dynamic-library) $(lzma-library) \
 	$(lzma-encoder) $(executable-dynamic) $(classpath-dep) $(test-dep) \
 	$(test-extra-dep) $(embed) $(build)/classpath.jar
 else
-build: $(static-library) $(dynamic-library) $(lzma-loader) \
+build: $(static-library) $(dynamic-library) $(lzma-library) \
 	$(lzma-encoder) $(classpath-dep) $(test-dep) \
 	$(test-extra-dep) $(embed) $(build)/classpath.jar
 endif
@@ -1919,6 +1915,21 @@ $(lzma-encoder-objects): $(build)/lzma/%.o: $(src)/lzma/%.cpp
 
 $(lzma-encoder): $(lzma-encoder-objects) $(lzma-encoder-lzma-objects)
 	$(build-cc) $(^) -g -o $(@)
+
+$(lzma-library): $(lzma-loader) $(lzma-decode-objects)
+	@echo "creating $(@)"
+	@rm -rf $(build)/libavian-lzma
+	@mkdir -p $(build)/libavian-lzma
+	rm -rf $(@)
+	for x in $(^); \
+		do cp $${x} $(build)/libavian-lzma/$$(echo $${x} | sed s:/:_:g); \
+	done
+ifdef ms_cl_compiler
+	$(ar) $(arflags) $(build)/libavian-lzma/*.o -out:$(@)
+else
+	$(ar) cru $(@) $(build)/libavian-lzma/*.o
+	$(ranlib) $(@)
+endif
 
 $(lzma-loader): $(src)/lzma/load.cpp
 	$(compile-object)

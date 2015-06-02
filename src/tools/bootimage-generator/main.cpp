@@ -348,13 +348,13 @@ GcTriple* makeCodeImage(Thread* t,
       roots(t)->bootLoader()->as<GcSystemClassLoader>(t)->finder());
 
   for (Finder::Iterator it(finder); it.hasMore();) {
-    unsigned nameSize = 0;
+    size_t nameSize = 0;
     const char* name = it.next(&nameSize);
 
     if (endsWith(".class", name, nameSize)
         and (className == 0 or strncmp(name, className, nameSize - 6) == 0)) {
       if (false) {
-        fprintf(stderr, "pass 1 %.*s\n", nameSize - 6, name);
+        fprintf(stderr, "pass 1 %.*s\n", (int)nameSize - 6, name);
       }
       GcClass* c
           = resolveSystemClass(t,
@@ -686,13 +686,13 @@ GcTriple* makeCodeImage(Thread* t,
   }
 
   for (Finder::Iterator it(finder); it.hasMore();) {
-    unsigned nameSize = 0;
+    size_t nameSize = 0;
     const char* name = it.next(&nameSize);
 
     if (endsWith(".class", name, nameSize)
         and (className == 0 or strncmp(name, className, nameSize - 6) == 0)) {
       if (false) {
-        fprintf(stderr, "pass 2 %.*s\n", nameSize - 6, name);
+        fprintf(stderr, "pass 2 %.*s\n", (int)nameSize - 6, name);
       }
       GcClass* c = 0;
       PROTECT(t, c);
@@ -1852,7 +1852,7 @@ void writeBootImage2(Thread* t,
     }
 
     uint8_t* bootimage;
-    unsigned bootimageLength;
+    size_t bootimageLength;
     if (useLZMA) {
 #ifdef AVIAN_USE_LZMA
       bootimage = encodeLZMA(t->m->system,
@@ -1861,7 +1861,7 @@ void writeBootImage2(Thread* t,
                              bootimageData.length,
                              &bootimageLength);
 
-      fprintf(stderr, "compressed heap size %d\n", bootimageLength);
+      fprintf(stderr, "compressed heap size %zu\n", bootimageLength);
 #else
       abort(t);
 #endif
