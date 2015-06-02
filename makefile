@@ -1,5 +1,4 @@
-MAKEFLAGS = 
-#-s
+MAKEFLAGS = -s
 
 name = avian
 version := $(shell grep version gradle.properties | cut -d'=' -f2)
