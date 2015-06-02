@@ -442,7 +442,7 @@ endif
 # note that we suppress the non-virtual-dtor warning because we never
 # use the delete operator, which means we don't need virtual
 # destructors:
-warnings = -Wall -Wextra -Wunused-parameter -Winit-self \
+warnings = -Wall -Wextra -Werror -Wunused-parameter -Winit-self \
 	-Wno-non-virtual-dtor
 
 target-cflags = -DTARGET_BYTES_PER_WORD=$(pointer-size)
@@ -470,7 +470,7 @@ converter-cflags = -D__STDC_CONSTANT_MACROS -std=c++0x -Iinclude/ -Isrc/ \
 	-fno-rtti -fno-exceptions \
 	-DAVIAN_TARGET_ARCH=AVIAN_ARCH_UNKNOWN \
 	-DAVIAN_TARGET_FORMAT=AVIAN_FORMAT_UNKNOWN \
-	-Wall -Wextra -Wunused-parameter -Winit-self -Wno-non-virtual-dtor
+	-Wall -Wextra -Werror -Wunused-parameter -Winit-self -Wno-non-virtual-dtor
 
 cflags = $(build-cflags)
 
@@ -1748,7 +1748,7 @@ $(build)/android.dep: $(luni-javas) $(dalvik-javas) $(libart-javas) \
 		| (cd $(build)/android-src && $(jar) x)
 #	(cd android && $(jar) c *)	| (cd $(build)/android-src && $(jar) x)
 	find $(build)/android-src -name '*.java' > $(build)/android.txt
-	$(javac) -J-Xms256m -J-Xmx256m -Xmaxerrs 1000 -d $(build)/android @$(build)/android.txt
+	$(javac) -Xmaxerrs 1000 -d $(build)/android @$(build)/android.txt
 	rm $(build)/android/sun/misc/Unsafe* \
 		$(build)/android/java/lang/reflect/Proxy*
 	for x in $(luni-copied-nonjavas); \
