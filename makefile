@@ -273,7 +273,7 @@ ifneq ($(android),)
 		icu-libs := $(android)/external/icu4c/lib/libsicuin.a \
 			$(android)/external/icu4c/lib/libsicuuc.a \
 			$(android)/external/icu4c/lib/sicudt.a
-		platform-lflags := -lgdi32 -lshlwapi -lwsock32
+		platform-lflags := -lgdi32 -lshlwapi -lwsock32 -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic
 	else
 		android-cflags += -fPIC -DHAVE_SYS_UIO_H -DHAVE_POSIX_FILEMAP
 		blacklist =
@@ -863,7 +863,7 @@ ifeq ($(platform),windows)
 	exe-suffix = .exe
 	rpath =
 
-	lflags = -L$(lib) -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic $(common-lflags) -lws2_32 -liphlpapi -mconsole
+	lflags = -L$(lib) $(common-lflags) -lws2_32 -liphlpapi -mconsole
 	cflags = -I$(inc) $(common-cflags) -DWINVER=0x0500 -U__STRICT_ANSI__
 
 	ifeq (,$(filter mingw32 cygwin,$(build-platform)))
