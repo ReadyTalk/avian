@@ -86,6 +86,35 @@ as advertised on the supported platforms. Please post to the
   <li>Improve compatibility with Android class library</li>
   <li>Improve Gradle build support</li>
 </ul>
+
+<h3 id="avian-pack">Avian-pack project (Avian with nicely patched Android Classpath)</h3>
+
+<p>This is Avian linked and packaged with Android components and libraries providing nearly-full support of core classes.
+<em>No Android UI or system components provided! Just Core Classes implementation.</em>
+All the components are patched to work on Windows and OS X (while vanilla Android classpath is Linux-only) and tested (a bit). 
+There are some minor known issues that hopefully will be fixed in the next releases.</p>
+
+<p><a href="https://github.com/bigfatbrowncat/avian-pack">Avian-pack project page on GitHub</a></p>
+
+<p>Major features:</p>
+<ul>
+	<li>All-in-one. Many simple Java projects and libraries should already work with this package
+	(if they don't, you are welcome to <a href="https://github.com/bigfatbrowncat/avian-pack/issues">submit an issue</a>.)</li>
+	<li>The only known classpath that has neither a proprietary, nor a GPL-like license, thus it could be freely used and embedded
+	into your projects. Or even modified (the authors would be happy for any pull requests submitted). 
+	Most non-Avian additional components are released under Apache license (the same as Android itself), 
+	others are mostly BSD. <em>No GPL, LGPL or GPL-like licenses included</em>.</li>
+	<li>The patches, that have been applied, made it working on Microsoft Windows. It wasn't a piece of cake. Really.
+	Especially the API part concerning sockets and other I/O.</li>
+</ul>
+
+<p></p><a href="https://github.com/bigfatbrowncat/avian-pack/releases/tag/v0.1-1.2.0">Avian-pack v0.1 (pre-release)
+with Avian 1.2.0 provided.</a></p>
+
+<p><em>Avian-pack is an independent project maintained by its creators: 
+<a href="https://github.com/bigfatbrowncat">@bigfatbrowncat</a> and 
+<a href="https://github.com/JustAMan">@JustAMan</a>. Please send claims and questions to the right persons.</em></p>
+
 </section>
 <section id="-ocumentation"><h2 id="documentation">Documentation</h2>
 
