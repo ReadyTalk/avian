@@ -194,16 +194,16 @@ and built it using Avian, <a href="http://proguard.sourceforge.net/">ProGuard</a
 
 mkdir work
 <span class="nb">cd </span>work
-curl -Of http://oss.readytalk.com/avian-web/proguard4.11.tar.gz
+curl -Of http://readytalk.github.io/avian-web/proguard4.11.tar.gz
 tar xzf proguard4.11.tar.gz
-curl -Of http://oss.readytalk.com/avian-web/lzma920.tar.bz2
+curl -Of http://readytalk.github.io/avian-web/lzma920.tar.bz2
 <span class="o">(</span>mkdir -p lzma-920 <span class="o">&amp;&amp;</span> <span class="nb">cd </span>lzma-920 <span class="o">&amp;&amp;</span> tar xjf ../lzma920.tar.bz2<span class="o">)</span>
-curl -Of http://oss.readytalk.com/avian-web/<span class="si">${</span><span class="nv">swt_zip</span><span class="si">}</span>
+curl -Of http://readytalk.github.io/avian-web/<span class="si">${</span><span class="nv">swt_zip</span><span class="si">}</span>
 mkdir -p swt/<span class="si">${</span><span class="nv">platform</span><span class="si">}</span>
 unzip -d swt/<span class="si">${</span><span class="nv">platform</span><span class="si">}</span> <span class="si">${</span><span class="nv">swt_zip</span><span class="si">}</span>
-curl -Of http://oss.readytalk.com/avian-web/avian-1.2.0.tar.bz2
+curl -Of http://readytalk.github.io/avian-web/avian-1.2.0.tar.bz2
 tar xjf avian-1.2.0.tar.bz2
-curl -Of http://oss.readytalk.com/avian-web/avian-swt-examples-1.2.0.tar.bz2
+curl -Of http://readytalk.github.io/avian-web/avian-swt-examples-1.2.0.tar.bz2
 tar xjf avian-swt-examples-1.2.0.tar.bz2
 <span class="c"># needed only for 32-bit Windows builds:</span>
 git clone https://github.com/ReadyTalk/win32.git
