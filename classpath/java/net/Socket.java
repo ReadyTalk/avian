@@ -93,7 +93,9 @@ public class Socket implements Closeable, AutoCloseable {
 				size = recv(sock, buffer, index, Math.min(fullSize, Socket.BUFFER_SIZE));
 				fullSize -= size;
 				index += size;
-			} while (fullSize != 0 && size != 0);
+			} while (fullSize != 0 && size > 0);
+			if(size < 0) throw new IOException("Error whilereading stream");
+			if(index == 0 && size == 0) return -1;
 			return index;
 		}
 

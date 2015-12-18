@@ -22,7 +22,7 @@ public class BufferedInputStream extends InputStream {
   }
   
   public BufferedInputStream(InputStream in) {
-    this(in, 4096);
+    this(in, 65536);
   }
 
   private void fill() throws IOException {
@@ -43,7 +43,12 @@ public class BufferedInputStream extends InputStream {
 
   public int read(byte[] b, int offset, int length) throws IOException {
     int count = 0;
-
+    if (position >= limit) {
+	fill();
+      if (limit == -1) {
+        return -1;
+      }
+	}
     if (position < limit) {
       int remaining = limit - position;
       if (remaining > length) {
@@ -54,28 +59,7 @@ public class BufferedInputStream extends InputStream {
 
       count += remaining;
       position += remaining;
-      offset += remaining;
-      length -= remaining;
     }
-
-    while (length > 0) {
-      int c = in.read(b, offset, length);
-      if (c == -1) {
-        if (count == 0) {
-          count = -1;
-        }
-        break;
-      } else {
-        offset += c;
-        count += c;
-        length -= c;
-
-        if (in.available() <= 0) {
-          break;
-        }
-      }
-    }
-
     return count;
   }
 
