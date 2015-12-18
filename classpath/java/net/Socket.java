@@ -86,6 +86,7 @@ public class Socket implements Closeable, AutoCloseable {
 		
 		@Override
 		public int read(byte[] buffer) throws IOException {
+			if(buffer.length == 0) return 0; //spec says return 0 if buffer length is zero.
 			int fullSize = buffer.length;
 			int index = 0;
 			int size;
@@ -93,11 +94,11 @@ public class Socket implements Closeable, AutoCloseable {
 				size = recv(sock, buffer, index, Math.min(fullSize, Socket.BUFFER_SIZE));
 				fullSize -= size;
 				index += size;
-			} while (fullSize != 0 && size != 0);
+			} while (fullSize != 0 && size > 0); //changed size != 0 to size > 0, because recv returns -1 on error, which should cancel the read, and throw an Exception.
+			if(size < 0) throw new IOException("Error while reading stream"); //as the manpage of recv says, a value below zero indicates an error.
+			if(index == 0 && size == 0) return -1; // if no bytes have been read until now, and the stream is closed (size == 0), then return -1 to indicate end of stream. 
 			return index;
 		}
-
-		
 	}
 	
 	private class SocketOutputStream extends OutputStream {
