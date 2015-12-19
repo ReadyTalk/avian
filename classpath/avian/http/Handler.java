@@ -59,8 +59,8 @@ public class Handler extends URLStreamHandler
                 OutputStream out = socket.getOutputStream();
                 writer = new BufferedWriter(new OutputStreamWriter(out));
                 writer.write("GET " + url.getPath() + " HTTP/1.1");
-                writer.write("\nHost: " + host);
-                writer.write("\n\n");
+                writer.write("\r\nHost: " + host);
+                writer.write("\r\n\r\n");
                 writer.flush();
                 bin = new BufferedInputStream(socket.getInputStream());
                 readHeader();
@@ -71,23 +71,22 @@ public class Handler extends URLStreamHandler
 
         private void readHeader() throws IOException
         {
-            byte[] buf = new byte[2048];
+            byte[] buf = new byte[8192];
             int b = 0;
-            int newLineCount = 0;
             int index = 0;
-            while(b >= 0 && newLineCount != 4)
+            while(b >= 0)
             {
+                if(index >= 4 && buf[index-4] == '\r' && buf[index-3] == '\n' && buf[index-2] == '\r' && buf[index-1] == '\n')
+                {
+                    break;
+                }
                 b = bin.read();
                 buf[index] = (byte) b;
-                if(buf[index] == 10 || buf[index] == 13)
-                {
-                    newLineCount++;
-                }
-                else
-                {
-                    newLineCount = 0;
-                }
                 index++;
+                if(index >= buf.length)
+                {
+                    throw new IOException("Header exceeded maximum size of 8k.");
+                }
             }
             BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buf, 0, index)));
             String line = reader.readLine();

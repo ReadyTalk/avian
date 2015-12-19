@@ -86,6 +86,7 @@ public class Socket implements Closeable, AutoCloseable {
 		
 		@Override
 		public int read(byte[] buffer) throws IOException {
+			if(buffer.length == 0) return 0;
 			int fullSize = buffer.length;
 			int index = 0;
 			int size;
@@ -94,7 +95,7 @@ public class Socket implements Closeable, AutoCloseable {
 				fullSize -= size;
 				index += size;
 			} while (fullSize != 0 && size > 0);
-			if(size < 0) throw new IOException("Error whilereading stream");
+			if(size < 0) throw new IOException("Error while reading stream");
 			if(index == 0 && size == 0) return -1;
 			return index;
 		}
