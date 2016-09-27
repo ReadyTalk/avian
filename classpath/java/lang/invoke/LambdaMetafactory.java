@@ -25,7 +25,11 @@ import avian.SystemClassLoader;
 
 public class LambdaMetafactory {
   private static int nextNumber = 0;
-  
+
+  public static final int FLAG_SERIALIZABLE = 1;
+  public static final int FLAG_MARKERS = 2;
+  public static final int FLAG_BRIDGES = 4;
+
   private static Class resolveReturnInterface(MethodType type) {
     int index = 1;
     byte[] s = type.spec;
@@ -202,13 +206,15 @@ public class LambdaMetafactory {
                       new MethodHandle(implementationClass,
                                        implementationName,
                                        implementationSpec,
-                                       implementationKind));
+                                       implementationKind),
+                      emptyInterfaceList);
   }
 
   private static byte[] makeLambda(String invokedName,
                                    MethodType invokedType,
                                    MethodType methodType,
-                                   MethodHandle methodImplementation)
+                                   MethodHandle methodImplementation,
+                                   Class[] interfaces)
   {
     String className;
     { int number;
@@ -220,8 +226,13 @@ public class LambdaMetafactory {
 
     List<PoolEntry> pool = new ArrayList();
 
-    int interfaceIndex = ConstantPool.addClass
-      (pool, invokedType.returnType().getName().replace('.', '/'));
+    int[] interfaceIndexes = new int[interfaces.length + 1];
+    interfaceIndexes[0] = ConstantPool.addClass(pool, invokedType.returnType().getName().replace('.', '/'));
+    for (int i = 0; i < interfaces.length; i++) {
+      String name = interfaces[i].getName().replace('.', '/');
+      System.out.println("interface name " + name);
+      interfaceIndexes[i + 1] = ConstantPool.addClass(pool, name);
+    }
 
     List<FieldData> fieldTable = new ArrayList();
 
@@ -270,7 +281,7 @@ public class LambdaMetafactory {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     try {
       Assembler.writeClass
-        (out, pool, nameIndex, superIndex, new int[] { interfaceIndex },
+        (out, pool, nameIndex, superIndex, interfaceIndexes,
          fieldTable.toArray(new FieldData[fieldTable.size()]),
          methodTable.toArray(new MethodData[methodTable.size()]));
     } catch (IOException e) {
@@ -281,7 +292,25 @@ public class LambdaMetafactory {
 
     return out.toByteArray();
   }
-  
+
+  private static CallSite makeCallSite(MethodType invokedType, byte[] classData) throws AssertionError {
+    try {
+      return new CallSite
+              (new MethodHandle
+                      (MethodHandle.REF_invokeStatic, invokedType.loader, Classes.toVMMethod
+                              (avian.SystemClassLoader.getClass
+                                      (avian.Classes.defineVMClass
+                                              (invokedType.loader, classData, 0, classData.length))
+                                      .getMethod("make", invokedType.parameterArray()))));
+    } catch (NoSuchMethodException e) {
+      AssertionError error = new AssertionError();
+      error.initCause(e);
+      throw error;
+    }
+  }
+
+  private static final Class[] emptyInterfaceList = new Class[] {};
+
   public static CallSite metafactory(MethodHandles.Lookup caller,
                                      String invokedName,
                                      MethodType invokedType,
@@ -290,20 +319,48 @@ public class LambdaMetafactory {
                                      MethodType instantiatedMethodType)
     throws LambdaConversionException
   {
-    byte[] classData = makeLambda(invokedName, invokedType, methodType, methodImplementation);
-    
-    try {
-      return new CallSite
-        (new MethodHandle
-         (MethodHandle.REF_invokeStatic, invokedType.loader, Classes.toVMMethod
-          (avian.SystemClassLoader.getClass
-           (avian.Classes.defineVMClass
-            (invokedType.loader, classData, 0, classData.length))
-           .getMethod("make", invokedType.parameterArray()))));
-    } catch (NoSuchMethodException e) {
-      AssertionError error = new AssertionError();
-      error.initCause(e);
-      throw error;
+    byte[] classData = makeLambda(invokedName, invokedType, methodType, methodImplementation, emptyInterfaceList);
+    return makeCallSite(invokedType, classData);
+  }
+
+  public static CallSite altMetafactory(MethodHandles.Lookup caller,
+                                        String invokedName,
+                                        MethodType invokedType,
+                                        Object... args) throws LambdaConversionException {
+    // Behaves as if the prototype is like this:
+    //
+    // CallSite altMetafactory(
+    //    MethodHandles.Lookup caller,
+    //    String invokedName,
+    //    MethodType invokedType,
+    //    MethodType methodType,
+    //    MethodHandle methodImplementation,
+    //    MethodType instantiatedMethodType,
+    //    int flags,
+    //    int markerInterfaceCount,  // IF flags has MARKERS set
+    //    Class... markerInterfaces, // IF flags has MARKERS set
+    //    int bridgeCount,           // IF flags has BRIDGES set
+    //    MethodType... bridges      // IF flags has BRIDGES set
+    //  )
+
+    MethodType methodType = (MethodType) args[0];
+    MethodHandle methodImplementation = (MethodHandle) args[1];
+
+    int flags = (Integer) args[3];
+    boolean serializable = (flags & FLAG_SERIALIZABLE) != 0;
+    if ((flags & FLAG_MARKERS) != 0)
+      throw new UnsupportedOperationException("FLAG_MARKERS");
+    if ((flags & FLAG_BRIDGES) != 0) {
+      int bridgeCount = (Integer) args[4];
+      if (bridgeCount > 0)
+        throw new UnsupportedOperationException("FLAG_BRIDGES");
     }
+
+    Class[] interfaces = new Class[serializable ? 1 : 0];
+    if (serializable)
+      interfaces[0] = java.io.Serializable.class;
+
+    byte[] classData = makeLambda(invokedName, invokedType, methodType, methodImplementation, interfaces);
+    return makeCallSite(invokedType, classData);
   }
 }

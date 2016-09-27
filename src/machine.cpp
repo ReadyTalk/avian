@@ -6039,6 +6039,7 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
   GcClass* c = invocation->class_();
   PROTECT(t, c);
 
+  // First element points to the bootstrap method. The rest are static data passed to the BSM.
   GcCharArray* bootstrapArray = cast<GcCharArray>(
       t,
       cast<GcArray>(t, c->addendum()->bootstrapMethodTable())
@@ -6055,8 +6056,6 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
                                                GcNoSuchMethodError::Type));
   PROTECT(t, bootstrap);
 
-  assertT(t, bootstrap->parameterCount() == 2 + bootstrapArray->length());
-
   GcLookup* lookup
       = makeLookup(t, c, ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED | ACC_STATIC);
   PROTECT(t, lookup);
@@ -6066,9 +6065,15 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
       = t->m->classpath->makeString(t, nameBytes, 0, nameBytes->length() - 1);
   PROTECT(t, name);
 
+  // This is the type of the linked-to method (e.g. lambda).
   GcMethodType* type = makeMethodType(
       t, c->loader(), invocation->template_()->spec(), 0, 0, 0);
   PROTECT(t, type);
+
+  // There are always 3 arguments to an indy bootstrap method on top of the extras in the bootstrap array (if any),
+  // and then we must subtract the last Object[] argument in the method prototype to find the number of varargs.
+  int numVarArgs = bootstrap->flags() & ACC_VARARGS ? bootstrapArray->length() - 1 : 0;
+  assertT(t, numVarArgs >= 0);
 
   GcArray* array = makeArray(t, bootstrap->parameterCount());
   PROTECT(t, array);
@@ -6087,6 +6092,11 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
   unsigned i = 0;
   while (it.hasNext()) {
     const char* p = it.next();
+
+    // Last argument is Object[] for vararg methods so skip it.
+    if (numVarArgs && !it.hasNext())
+      break;
+
     switch (*p) {
     case 'L': {
       const char* const methodType = "Ljava/lang/invoke/MethodType;";
@@ -6155,6 +6165,68 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
     }
 
     ++i;
+  }
+
+  object varArgsArray_ = makeObjectArray(t, numVarArgs);
+  PROTECT(t, varArgsArray_);
+
+  if (numVarArgs > 0) {
+    assertT(t, i < bootstrapArray->length());
+    GcArray *varArgsArray = reinterpret_cast<GcArray*>(varArgsArray_);
+
+    // For each vararg, we must figure out the type from the constant pool instead of the method prototype like we just
+    // did. These two paths should probably be unified.
+    unsigned cursor = 0;
+    for (; i < bootstrapArray->length() - 1; ++i, ++cursor) {
+      assertT(t, cursor < (unsigned) numVarArgs);
+      int cpIndex = bootstrapArray->body()[i + 1];
+      if (singletonIsObject(t, invocation->pool(), cpIndex)) {
+        object &o = singletonObject(t, invocation->pool(), cpIndex);
+        if (instanceOf(t, ::type(t, GcByteArray::Type), o)) {
+          // Hack: possibly this points to something else that happens to be a byte array, we lost track of the true
+          // type when it was inserted into the constant pool array. For now just assume it's a MethodType: this works
+          // OK for lambdas.
+          GcMethodType* type = makeMethodType(
+                  t,
+                  c->loader(),
+                  cast<GcByteArray>(
+                          t,
+                          singletonObject(
+                                  t, invocation->pool(), bootstrapArray->body()[i + 1])),
+                  0,
+                  0,
+                  0);
+          varArgsArray->setBodyElement(t, cursor, type);
+        } else if (instanceOf(t, ::type(t, GcReference::Type), o)) {
+          GcReference* reference = cast<GcReference>(
+                  t,
+                  singletonObject(
+                          t, invocation->pool(), bootstrapArray->body()[i + 1]));
+          int kind = reference->kind();
+
+          GcMethod* method = cast<GcMethod>(t,
+                                            resolve(t,
+                                                    c->loader(),
+                                                    invocation->pool(),
+                                                    bootstrapArray->body()[i + 1],
+                                                    findMethodInClass,
+                                                    GcNoSuchMethodError::Type));
+
+          GcMethodHandle* handle = makeMethodHandle(t, kind, c->loader(), method, 0);
+          varArgsArray->setBodyElement(t, cursor, handle);
+        } else {
+          varArgsArray->setBodyElement(t, cursor, 0);
+        }
+      } else {
+        // Is a constant value of unknown type (?).
+        long value = singletonValue(t, invocation->pool(), cpIndex);
+        // Is it an int or is it a long? Again, we lost track of the type.
+        GcInt *int_ = makeInt(t, (int) value);
+        varArgsArray->setBodyElement(t, cursor, int_);
+      }
+    }
+
+    array->setBodyElement(t, argument, varArgsArray_);
   }
 
   GcMethodHandle* handle
