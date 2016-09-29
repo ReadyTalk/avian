@@ -23,6 +23,10 @@ import avian.Assembler;
 import avian.ConstantPool.PoolEntry;
 import avian.SystemClassLoader;
 
+// To understand what this is all about, please read:
+//
+//   http://cr.openjdk.java.net/~briangoetz/lambda/lambda-translation.html
+
 public class LambdaMetafactory {
   private static int nextNumber = 0;
 
@@ -348,14 +352,45 @@ public class LambdaMetafactory {
 
     int flags = (Integer) args[3];
     boolean serializable = (flags & FLAG_SERIALIZABLE) != 0;
+
+    // Marker interfaces are added to a lambda when they're written like this:
+    //
+    //    Runnable r = (Runnable & Serializable) () -> foo()
+    //
+    // The intersection type in the cast here indicates to the compiler what interfaces 
+    // the generated lambda class should implement. Because a lambda has (by definition)
+    // one method only, it is meaningless for these interfaces to contain anything, thus
+    // they are only allowed to be empty marker interfaces. In practice the Serializable
+    // interface is handled specially and the use of markers is extremely rare. Adding
+    // support would be easy though.
     if ((flags & FLAG_MARKERS) != 0)
-      throw new UnsupportedOperationException("FLAG_MARKERS");
+      throw new UnsupportedOperationException("Marker interfaces on lambdas are not supported on Avian yet. Sorry.");
+
+    // In some cases there is a mismatch between what the JVM type system supports and
+    // what the Java language supports. In other cases the type of a lambda expression
+    // may not perfectly match the functional interface which represents it. Consider the
+    // following case:
+    //
+    //    interface I { void foo(Integer i, String s1, Strings s2) }
+    //    class Foo { static void m(Number i, Object... rest) {} }
+    //    
+    //    I lambda = Foo::m
+    //
+    // This is allowed by the Java language, even though the interface representing the 
+    // lambda specifies three specific arguments and the method implementing the lambda
+    // uses varargs and a different type signature. Behind the scenes the compiler generates
+    // a "bridge" method that does the adaptation.
+    //
+    // You can learn more here: http://www.oracle.com/technetwork/java/jvmls2013heid-2013922.pdf
+    // and here: http://cr.openjdk.java.net/~briangoetz/lambda/lambda-translation.html
     if ((flags & FLAG_BRIDGES) != 0) {
       int bridgeCount = (Integer) args[4];
       if (bridgeCount > 0)
-        throw new UnsupportedOperationException("FLAG_BRIDGES");
+        throw new UnsupportedOperationException("A lambda that requires bridge methods was used, this is not yet supported by Avian. Sorry.");
     }
 
+    // TODO: This is not necessary if the function type interface is already inheriting
+    // from Serializable.
     Class[] interfaces = new Class[serializable ? 1 : 0];
     if (serializable)
       interfaces[0] = java.io.Serializable.class;

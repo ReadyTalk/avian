@@ -6066,8 +6066,6 @@ GcJclass* getDeclaringClass(Thread* t, GcClass* c)
 
 GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
 {
-  // This support for invokedynamic is limited to support for the LambdaMetafactory, as the method dispatch logic
-  // assumes the first three args are always as expected by that class. It doesn't do full indy support.
   PROTECT(t, invocation);
 
   GcClass* c = invocation->class_();
@@ -6104,8 +6102,9 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
       t, c->loader(), invocation->template_()->spec(), 0, 0, 0);
   PROTECT(t, type);
 
-  // There are always 3 arguments to an indy bootstrap method on top of the extras in the bootstrap array (if any),
-  // and then we must subtract the last Object[] argument in the method prototype to find the number of varargs.
+  // There are always 3 arguments to an invokedynamic bootstrap method on top of the extras in the bootstrap 
+  // array (if any), and then we must subtract the last Object[] argument in the method prototype to find 
+  // the number of varargs.
   int numVarArgs = bootstrap->flags() & ACC_VARARGS ? bootstrapArray->length() - 1 : 0;
   assertT(t, numVarArgs >= 0);
 
