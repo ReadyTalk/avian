@@ -1590,6 +1590,9 @@ ifeq (7,$(java-version))
 	test-sources := $(subst $(test)/InvokeDynamic.java,,$(test-sources))
 	test-sources := $(subst $(test)/Interfaces.java,,$(test-sources))
 endif
+ifeq (8,$(java-version))
+	test-sources := $(subst $(test)/InvokeDynamic.java,,$(test-sources))
+endif
 
 test-cpp-sources = $(wildcard $(test)/*.cpp)
 test-sources += $(test-support-sources)
