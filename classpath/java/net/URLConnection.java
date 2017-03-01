@@ -71,9 +71,11 @@ public abstract class URLConnection {
 
   public String getHeaderField(String name) {
     String result = null;
-    List<String> values = getHeaderFields().get(name);
-    if(values != null && values.size() > 0) {
-      result = values.get(0);
+    if(name != null) {
+      List<String> values = getHeaderFields().get(name.toLowerCase());
+      if (values != null && values.size() > 0) {
+        result = values.get(0);
+      }
     }
 
     return result;

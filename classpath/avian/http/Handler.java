@@ -38,7 +38,7 @@ public class Handler extends URLStreamHandler
     
     class HttpURLConnection extends URLConnection
     {
-        private static final String HKEY_CONTENT_LENGTH = "Content-Length";
+        private static final String HKEY_CONTENT_LENGTH = "content-length";
 
         Socket socket;
         private BufferedWriter writer;
@@ -102,7 +102,7 @@ public class Handler extends URLStreamHandler
                 int i = line.indexOf(':');
                 if(i > 0)
                 {
-                    String key = line.substring(0, i);
+                    String key = line.substring(0, i).toLowerCase();
                     String value = line.substring(i + 1).trim();
 
                     List<String> valueList = new ArrayList<String>();
