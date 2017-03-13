@@ -692,11 +692,11 @@ public class Arrays {
   }
 
   public static int binarySearch(int[] a, int fromIndex, int toIndex, int key) {
-    checkRange(a.length, fromIndex, toIndex + 1);
+    checkRange(a.length, fromIndex, toIndex);
 
     // Assume array is already sorted
     int left = fromIndex;
-    int right = toIndex;
+    int right = toIndex - 1;
     int mid;
     while(left <= right) {
       mid = (left + right) / 2;
@@ -711,7 +711,5 @@ public class Arrays {
 
     return -left - 1;
   }
-
-
 
 }

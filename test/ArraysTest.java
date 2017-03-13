@@ -49,14 +49,14 @@ public class ArraysTest {
     expect(i == 6);
     i = Arrays.binarySearch(a, 6);
     expect(i == -3);
+    i = Arrays.binarySearch(a, 1, 4, 8);
+    expect(i == 3);
     i = Arrays.binarySearch(a, 1, 4, 10);
-    expect(i == 4);
-    i = Arrays.binarySearch(a, 1, 4, 13);
-    expect(i == -6);
+    expect(i == -5);
 
     Exception exception = null;
     try {
-      Arrays.binarySearch(a, -1, a.length - 1, 4);
+      Arrays.binarySearch(a, -1, a.length, 4);
     } catch (ArrayIndexOutOfBoundsException e) {
       exception = e;
     }
@@ -64,7 +64,7 @@ public class ArraysTest {
 
     exception = null;
     try {
-      Arrays.binarySearch(a, 0, a.length, 4);
+      Arrays.binarySearch(a, 0, a.length + 1, 4);
     } catch (ArrayIndexOutOfBoundsException e) {
       exception = e;
     }
