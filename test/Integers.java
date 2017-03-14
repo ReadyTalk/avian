@@ -20,6 +20,41 @@ public class Integers {
     return m;
   }
 
+  private static void testNumberOfLeadingZeros() {
+    expect(Integer.numberOfLeadingZeros(Integer.MAX_VALUE) == 1);
+    expect(Integer.numberOfLeadingZeros(0) == 32);
+
+    int positive = 1;
+    int negative = Integer.MIN_VALUE;
+    for(int i = 0; i < 32; i++) {
+      expect(Integer.numberOfLeadingZeros(positive) == 32 - i - 1);
+      positive <<= 1;
+
+      expect(Integer.numberOfLeadingZeros(negative) == 0);
+      negative += ((int)Math.pow(2, i));
+    }
+
+    for(int i = 0; i < 9999; i++) {
+      String binary = "0";
+      int nolz = 1;
+      boolean nolzFound = false;
+      for(int j = 0; j < 31; j++) {
+        double r = Math.random();
+        if(r < 0.5) {
+          binary += "0";
+          if(!nolzFound) {
+            nolz++;
+          }
+        } else {
+          binary += "1";
+          nolzFound = true;
+        }
+      }
+
+      expect(Integer.numberOfLeadingZeros(Integer.parseInt(binary, 2)) == nolz);
+    }
+  }
+
   public static void main(String[] args) throws Exception {
     { int foo = 1028;
       foo -= 1023;
@@ -320,5 +355,7 @@ public class Integers {
     expect(-83 == Integer.decode("-0123").intValue());
     expect(-291 == Integer.decode("-0x123").intValue());
     expect(291 == Integer.decode("#123").intValue());
+
+    testNumberOfLeadingZeros();
   }
 }
