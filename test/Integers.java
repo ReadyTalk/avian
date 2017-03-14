@@ -34,9 +34,9 @@ public class Integers {
       negative += ((int)Math.pow(2, i));
     }
 
-    for(int i = 0; i < 9999; i++) {
-      String binary = "0";
-      int nolz = 1;
+    for(int i = 0; i < 99999; i++) {
+      String binary = "";
+      int nolz = 0;
       boolean nolzFound = false;
       for(int j = 0; j < 31; j++) {
         double r = Math.random();
@@ -51,7 +51,16 @@ public class Integers {
         }
       }
 
-      expect(Integer.numberOfLeadingZeros(Integer.parseInt(binary, 2)) == nolz);
+      double r = Math.random();
+      if(r < 0.5) {
+        // positive
+        binary = "0" + binary;
+        nolz++;
+        expect(Integer.numberOfLeadingZeros(Integer.parseInt(binary, 2)) == nolz);
+      } else {
+        // negative
+        expect(Integer.numberOfLeadingZeros(-Integer.parseInt(binary, 2)) == 0);
+      }
     }
   }
 
