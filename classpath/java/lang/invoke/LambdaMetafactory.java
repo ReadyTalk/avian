@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.IOException;
 
 import avian.Classes;
@@ -174,26 +175,31 @@ public class LambdaMetafactory {
     }
 
     switch (implementation.kind) {
+    case MethodHandle.REF_invokeVirtual:
+      write1(out, invokevirtual);
+      writeMethodReference(out, pool, implementation.method);
+      break;
+
     case MethodHandle.REF_invokeStatic:
       write1(out, invokestatic);
+      writeMethodReference(out, pool, implementation.method);
       break;
 
     case MethodHandle.REF_invokeSpecial:
       write1(out, invokespecial);
+      writeMethodReference(out, pool, implementation.method);
+      break;
+
+    case MethodHandle.REF_invokeInterface:
+      write1(out, invokeinterface);
+      writeInterfaceMethodReference(out, pool, implementation.method);
+      write1(out, implementation.method.parameterFootprint);
+      write1(out, 0);
       break;
 
     default: throw new AssertionError
-        ("todo: implement per http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html#jvms-5.4.3.5");
+        ("todo: implement '" + implementation.kind + "' per http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html#jvms-5.4.3.5");
     }
-
-    write2(out, ConstantPool.addMethodRef
-           (pool,
-            Classes.makeString(implementation.method.class_.name, 0,
-                               implementation.method.class_.name.length - 1),
-            Classes.makeString(implementation.method.name, 0,
-                               implementation.method.name.length - 1),
-            Classes.makeString(implementation.method.spec, 0,
-                               implementation.method.spec.length - 1)) + 1);
 
     write1(out, implementation.type().result().return_());
 
@@ -204,6 +210,36 @@ public class LambdaMetafactory {
     set4(result, 4, result.length - 12);
 
     return result;
+  }
+
+  private static void writeMethodReference(OutputStream out,
+                                           List<PoolEntry> pool,
+                                           avian.VMMethod method)
+    throws IOException
+  {
+    write2(out, ConstantPool.addMethodRef
+           (pool,
+            Classes.makeString(method.class_.name, 0,
+                               method.class_.name.length - 1),
+            Classes.makeString(method.name, 0,
+                               method.name.length - 1),
+            Classes.makeString(method.spec, 0,
+                               method.spec.length - 1)) + 1);
+  }
+
+  private static void writeInterfaceMethodReference(OutputStream out,
+                                                    List<PoolEntry> pool,
+                                                    avian.VMMethod method)
+    throws IOException
+  {
+    write2(out, ConstantPool.addInterfaceMethodRef
+           (pool,
+            Classes.makeString(method.class_.name, 0,
+                               method.class_.name.length - 1),
+            Classes.makeString(method.name, 0,
+                               method.name.length - 1),
+            Classes.makeString(method.spec, 0,
+                               method.spec.length - 1)) + 1);
   }
 
   public static byte[] makeLambda(String invokedName,
