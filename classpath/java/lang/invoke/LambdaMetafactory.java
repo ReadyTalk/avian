@@ -182,8 +182,11 @@ public class LambdaMetafactory {
       write1(out, invokespecial);
       break;
 
-    default: throw new AssertionError
-        ("todo: implement per http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html#jvms-5.4.3.5");
+    case MethodHandle.REF_invokeVirtual:
+      write1(out, invokevirtual);
+      break;
+
+    default: throw new AssertionError(String.format("TODO: implement kind %d per http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html#jvms-5.4.3.5", implementation.kind));
     }
 
     write2(out, ConstantPool.addMethodRef

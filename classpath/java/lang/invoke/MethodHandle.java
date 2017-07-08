@@ -14,6 +14,7 @@ import avian.Classes;
 import avian.SystemClassLoader;
 
 public class MethodHandle {
+  static final int REF_invokeVirtual = 5;
   static final int REF_invokeStatic = 6;
   static final int REF_invokeSpecial = 7;
 
