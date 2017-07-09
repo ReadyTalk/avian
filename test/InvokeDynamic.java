@@ -176,5 +176,9 @@ public class InvokeDynamic {
     { Unboxed s = InvokeDynamic::addBoxed;
       expect(s.add(1, 2) == 3);
     }
+
+    { Supplier<java.util.List<String>> s = java.util.ArrayList<String>::new;
+      java.util.List<String> list = s.get();
+    }
   }
 }

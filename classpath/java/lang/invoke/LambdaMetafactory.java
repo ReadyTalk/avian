@@ -278,7 +278,7 @@ public class LambdaMetafactory {
   {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     write2(out, fieldType.footprint()
-           + localType.footprint() + 2); // max stack
+           + localType.footprint() + 3); // max stack
     write2(out, localType.footprint() + 1); // max locals
     write4(out, 0); // length (we'll set the real value later)
 
@@ -326,6 +326,18 @@ public class LambdaMetafactory {
       writeMethodReference(out, pool, implementation.method);
       break;
 
+    case MethodHandle.REF_newInvokeSpecial:
+      write1(out, new_);
+      write2(out, ConstantPool.addClass
+             (pool,
+              Classes.makeString
+              (implementation.method.class_.name, 0,
+               implementation.method.class_.name.length - 1)) + 1);
+      write1(out, dup);
+      write1(out, invokespecial);
+      writeMethodReference(out, pool, implementation.method);
+      break;
+
     case MethodHandle.REF_invokeInterface:
       write1(out, invokeinterface);
       writeInterfaceMethodReference(out, pool, implementation.method);
@@ -337,7 +349,9 @@ public class LambdaMetafactory {
         ("todo: implement '" + implementation.kind + "' per http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html#jvms-5.4.3.5");
     }
 
-    maybeBoxOrUnbox(out, pool, implementation.type().result(), localType.result());
+    if (implementation.kind != MethodHandle.REF_newInvokeSpecial) {
+      maybeBoxOrUnbox(out, pool, implementation.type().result(), localType.result());
+    }
     write1(out, localType.result().return_());
 
     write2(out, 0); // exception handler table length
