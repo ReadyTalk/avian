@@ -3445,6 +3445,7 @@ inline object resolve(
   loadMemoryBarrier();
 
   if (objectClass(t, o) == type(t, GcReference::Type)) {
+    PROTECT(t, loader);
     PROTECT(t, pool);
 
     GcReference* reference = cast<GcReference>(t, o);
@@ -3464,6 +3465,10 @@ inline object resolve(
 
       if (o) {
         storeStoreMemoryBarrier();
+
+        if (objectClass(t, o) == type(t, GcMethod::Type)) {
+          o = makeMethodHandle(t, reference->kind(), loader, cast<GcMethod>(t, o), 0);
+        }
 
         pool->setBodyElement(t, index, reinterpret_cast<uintptr_t>(o));
       }
@@ -3584,7 +3589,7 @@ inline GcMethod* resolveMethod(Thread* t,
                                unsigned index,
                                bool throw_ = true)
 {
-  return cast<GcMethod>(t,
+  GcMethodHandle* handle = cast<GcMethodHandle>(t,
                         resolve(t,
                                 loader,
                                 method->code()->pool(),
@@ -3592,6 +3597,8 @@ inline GcMethod* resolveMethod(Thread* t,
                                 findMethodInClass,
                                 GcNoSuchMethodError::Type,
                                 throw_));
+
+  return handle ? handle->method() : 0;
 }
 
 inline GcMethod* resolveMethod(Thread* t,

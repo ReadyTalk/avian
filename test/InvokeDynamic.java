@@ -134,48 +134,47 @@ public class InvokeDynamic {
     }
 
     { Function<CharSequence, String> f = CharSequence::toString;
-      System.out.println(f.apply("invoke interface"));
+      expect(f.apply("invoke interface") == "invoke interface");
     }
 
-    //{ Function<CharSequence, Integer> f = CharSequence::length;
-    //  System.out.println(f.apply("invoke interface"));
-    //}
+    { Function<CharSequence, Integer> f = CharSequence::length;
+      expect(f.apply("invoke interface") == 16);
+    }
 
-    //{ BiFunction<CharSequence, Integer, Character> f = CharSequence::charAt;
-    //  String data = "0123456789";
-    //  for (int i = 0; i < data.length(); ++i) {
-    //      System.out.println(f.apply(data, i));
-    //  }
-    //}
-
-    { Function<java.util.List<String>, Iterator<String>> f = java.util.List<String>::iterator;
-      Iterator<String> iter = f.apply(Arrays.asList("1", "22", "333"));
-      while (iter.hasNext()) {
-        System.out.println(iter.next());
+    { BiFunction<CharSequence, Integer, Character> f = CharSequence::charAt;
+      String data = "0123456789";
+      for (int i = 0; i < data.length(); ++i) {
+        expect(f.apply(data, i) == data.charAt(i));
       }
     }
 
-    //{ BiFunction<GetLong, Long, Long> f = GetLong::get;
-    //  System.out.println("Long: " + f.apply(new LongHolder(), 20L));
-    //}
+    { Function<java.util.List<String>, Iterator<String>> f = java.util.List<String>::iterator;
+      Iterator<String> iter = f.apply(Arrays.asList("1", "22", "333"));
+      expect(iter.next() == "1");
+      expect(iter.next() == "22");
+      expect(iter.next() == "333");
+      expect(! iter.hasNext());
+    }
 
-    //{ BiFunction<GetDouble, Double, Double> f = GetDouble::get;
-    //  System.out.println("DoubleHolder: " + f.apply(new DoubleHolder(), 20d));
-    //}
+    { BiFunction<GetLong, Long, Long> f = GetLong::get;
+      expect(f.apply(new LongHolder(), 20L) == 20L);
+    }
+
+    { BiFunction<GetDouble, Double, Double> f = GetDouble::get;
+      expect(f.apply(new DoubleHolder(), 20d) == 20d);
+    }
 
     // This abort()s in machine.cpp
     // { Foo s = (Foo & Marker) this::requiresBridge;
     //   s.someFunction(1, 2, "");
     // }
 
-    // NPE
-    // { UnboxedSerializable s = InvokeDynamic::addBoxed;
-    //   expect(s.add(1, 2) == 3);
-    // }
+    { UnboxedSerializable s = InvokeDynamic::addBoxed;
+      expect(s.add(1, 2) == 3);
+    }
 
-    // NPE
-    // { Unboxed s = InvokeDynamic::addBoxed;
-    //   expect(s.add(1, 2) == 3);
-    // }
+    { Unboxed s = InvokeDynamic::addBoxed;
+      expect(s.add(1, 2) == 3);
+    }
   }
 }
