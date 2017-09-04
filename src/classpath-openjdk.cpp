@@ -981,11 +981,16 @@ void uncaughtException(Thread *t, GcThrowable *e)
                                      "(Ljava/lang/Throwable;)V");
   if (dispatch != NULL) {
     THREAD_RESOURCE0(t, {
-      // We ignore any exceptions from the uncaught
-      // exception handler itself.
-      t->exception = NULL;
+      if (t->exception != NULL) {
+        // We ignore any exceptions from the uncaught
+        // exception handler itself.
+        t->exception = NULL;
 
-      disposeThread(t);
+        // The stack will be unwound when this resource is
+        // released, which means that uncaughtException()
+        // will not return. So repeat the thread clean-up here.
+        disposeThread(t);
+      }
     });
 
     t->m->processor->invoke(t, dispatch, t->javaThread, e);
