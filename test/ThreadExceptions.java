@@ -46,5 +46,26 @@ public class ThreadExceptions {
       expect("TEST-HANDLER".equals(handler.message));
     }
 
+    { Thread thread = new Thread() {
+        @Override
+        public void run() {
+          throw new RuntimeException("TEST-BAD-HANDLER");
+        }
+      };
+
+      Handler handler = new Handler() {
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+          super.uncaughtException(t, e);
+          throw new IllegalStateException("BAD THING");
+        }
+      };
+      thread.setUncaughtExceptionHandler(handler);
+      thread.start();
+      thread.join();
+
+      expect("TEST-BAD-HANDLER".equals(handler.message));
+      System.out.println("Exception from UncaughtExceptionHandler was ignored");
+    }
   }
 }
