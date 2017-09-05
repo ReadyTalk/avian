@@ -4103,6 +4103,7 @@ void enter(Thread* t, Thread::State s)
     } else {
       // fall through to slow path
     }
+    /* fallthrough */
 
   case Thread::ZombieState: {
     ACQUIRE_LOCK;
