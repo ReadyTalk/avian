@@ -6187,7 +6187,7 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
   }
 
   // `i` iterates through the bootstrap arguments (the +1 is because we skip
-  // the boostrap method's name), `it` iterates through the corresponding types
+  // the bootstrap method's name), `it` iterates through the corresponding types
   // in the method signature
   unsigned i = 0;
   while (i + 1 < bootstrapArray->length() && it.hasNext()) {
