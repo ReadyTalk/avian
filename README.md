@@ -90,7 +90,8 @@ certain flags described below, all of which are optional.
         use-clang={true,false} \
         openjdk=<openjdk installation directory> \
         openjdk-src=<openjdk source directory> \
-        android=<android source directory>
+        android=<android source directory> \
+        ios-version=<iOS minimum version>
 
   * `platform` - the target platform
     * _default:_ output of $(uname -s | tr [:upper:] [:lower:]),
@@ -158,6 +159,12 @@ the OpenJDK Class Library" below for details.
 default Avian class library.  See "Building with the Android Class
 Library" below for details.
     * _default:_ not set
+
+  * `ios-version` - the minimum iOS SDK version which will be used
+when compiling for ios target. Do not use a value 11.0 or larger,
+if you want to support 32 bit version. This option is only valid
+for platform=ios .
+    * _default:_ 8.0
 
 These flags determine the name of the directory used for the build.
 The name always starts with _${platform}-${arch}_, and each non-default

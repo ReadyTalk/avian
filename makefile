@@ -776,7 +776,6 @@ ifeq ($(kernel),darwin)
 	ifeq ($(platform),ios)
 		ifeq ($(sim),true)
 			target = iPhoneSimulator
-			sdk = iphonesimulator$(ios-version)
 			ifeq ($(arch),i386)
 				arch-flag = -arch i386
 			else
@@ -786,7 +785,6 @@ ifeq ($(kernel),darwin)
 			release = Release-iphonesimulator
 		else
 			target = iPhoneOS
-			sdk = iphoneos$(ios-version)
 			ifeq ($(arch),arm)
 				arch-flag = -arch armv7
 			else
@@ -799,16 +797,11 @@ ifeq ($(kernel),darwin)
 		platform-dir = $(developer-dir)/Platforms/$(target).platform
 		sdk-dir = $(platform-dir)/Developer/SDKs
 
-		ios-version := $(shell for x in 10.3 10.2 10.1 10.0 9.3 9.2 9.1 9.0 8.3 8.2 8.1 8.0; \
-			do if test -d $(sdk-dir)/$(target)$$x.sdk \
-				-o -L $(sdk-dir)/$(target)$$x.sdk; \
-			then echo $$x; break; fi; done)
-
 		ifeq ($(ios-version),)
-			x := $(error "couldn't find SDK in $(sdk-dir)")
+			ios-version := 8.0
 		endif
 
-		sysroot = $(sdk-dir)/$(target)$(ios-version).sdk
+		sysroot = $(sdk-dir)/$(target).sdk
 
 # apparently, the header files we need are part of the simulator SDK
 # but not the device SDK, so we copy them from the former even if
@@ -832,7 +825,7 @@ ifeq ($(kernel),darwin)
 			cc = $(ios-bin)/gcc
 		endif
 
-		flags = -isysroot $(sdk-dir)/$(target)$(ios-version).sdk \
+		flags = -isysroot $(sdk-dir)/$(target).sdk \
 			$(arch-flag)
 
 		classpath-extra-cflags += $(flags)
