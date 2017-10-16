@@ -5145,20 +5145,20 @@ loop:
         GcClass* c = context->method->class_();
         PROTECT(t, c);
 
-        GcMethod* target
-            = c->addendum()->bootstrapLambdaTable()
-                  ? cast<GcMethod>(
-                        t,
-                        cast<GcArray>(t, c->addendum()->bootstrapLambdaTable())
-                            ->body()[invocation->bootstrap()])
-                  : nullptr;
+        // We use the second half of the bootstrap method table as a
+        // cache for already-synthesized lambdas:
+        GcMethod* target = cast<GcMethod>(
+            t, invocation->bootstrapMethodTable()
+                   ->body()[(invocation->bootstrapMethodTable()->length() / 2)
+                            + invocation->bootstrap()]);
         PROTECT(t, target);
 
         if (target == nullptr) {
+          // Not cached, so now we need to synthesize it:
+
           GcCharArray* bootstrapArray = cast<GcCharArray>(
-              t,
-              cast<GcArray>(t, c->addendum()->bootstrapMethodTable())
-                  ->body()[invocation->bootstrap()]);
+              t, cast<GcArray>(t, invocation->bootstrapMethodTable())
+                     ->body()[invocation->bootstrap()]);
           PROTECT(t, bootstrapArray);
 
           if (isLambda(t, c->loader(), bootstrapArray, invocation)) {
@@ -5263,17 +5263,13 @@ loop:
               target = resolveMethod(
                   t, lambdaClass, "make", RUNTIME_ARRAY_BODY(spec));
 
-              GcArray* table
-                  = cast<GcArray>(t, c->addendum()->bootstrapLambdaTable());
-              if (table == nullptr) {
-                table = makeArray(
-                    t,
-                    cast<GcArray>(t, c->addendum()->bootstrapMethodTable())
-                        ->length());
-                c->addendum()->setBootstrapLambdaTable(t, table);
-              }
-
-              table->setBodyElement(t, invocation->bootstrap(), target);
+              // Now cache it so we don't try to re-synthesize it
+              // later.
+              invocation->bootstrapMethodTable()->setBodyElement(
+                  t,
+                  (invocation->bootstrapMethodTable()->length() / 2)
+                      + invocation->bootstrap(),
+                  target);
             } else {
               throwNew(t,
                        GcVirtualMachineError::Type,

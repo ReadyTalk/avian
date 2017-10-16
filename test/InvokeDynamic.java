@@ -103,6 +103,14 @@ public class InvokeDynamic {
   private interface Marker {
   }
 
+  private interface MyFunction<T, R> {
+    R apply(T t);
+
+    default <V> MyFunction<T, V> andThen(MyFunction<? super R, ? extends V> after) {
+      return t -> after.apply(apply(t));
+    }
+  }
+
   private void test() {
     { int c = 2;
       Operation op = (a, b) -> ((a + b) * c) - foo;
@@ -179,6 +187,12 @@ public class InvokeDynamic {
 
     { Supplier<java.util.List<String>> s = java.util.ArrayList<String>::new;
       java.util.List<String> list = s.get();
+    }
+
+    {
+      MyFunction<Integer, Integer> addTwo = x -> x + 2;
+      MyFunction<Integer, Integer> mulTwo = x -> x * 2;
+      expect(addTwo.andThen(mulTwo).apply(7) == 18);
     }
   }
 }

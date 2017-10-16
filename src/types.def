@@ -89,6 +89,7 @@
   (class class)
   (singleton pool)
   (method template)
+  (field array bootstrapMethodTable)
   (callSite site))
 
 (type triple

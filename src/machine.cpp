@@ -877,9 +877,11 @@ unsigned parsePoolEntry(Thread* t,
                         Stream& s,
                         uint32_t* index,
                         GcSingleton* pool,
+                        GcList* invocations,
                         unsigned i)
 {
   PROTECT(t, pool);
+  PROTECT(t, invocations);
 
   s.setPosition(index[i]);
 
@@ -921,7 +923,7 @@ unsigned parsePoolEntry(Thread* t,
   case CONSTANT_Class: {
     if (singletonObject(t, pool, i) == 0) {
       unsigned si = s.read2() - 1;
-      parsePoolEntry(t, s, index, pool, si);
+      parsePoolEntry(t, s, index, pool, invocations, si);
 
       GcReference* value = makeReference(
           t, 0, 0, cast<GcByteArray>(t, singletonObject(t, pool, si)), 0);
@@ -937,7 +939,7 @@ unsigned parsePoolEntry(Thread* t,
   case CONSTANT_String: {
     if (singletonObject(t, pool, i) == 0) {
       unsigned si = s.read2() - 1;
-      parsePoolEntry(t, s, index, pool, si);
+      parsePoolEntry(t, s, index, pool, invocations, si);
 
       object value
           = parseUtf8(t, cast<GcByteArray>(t, singletonObject(t, pool, si)));
@@ -958,8 +960,8 @@ unsigned parsePoolEntry(Thread* t,
       unsigned ni = s.read2() - 1;
       unsigned ti = s.read2() - 1;
 
-      parsePoolEntry(t, s, index, pool, ni);
-      parsePoolEntry(t, s, index, pool, ti);
+      parsePoolEntry(t, s, index, pool, invocations, ni);
+      parsePoolEntry(t, s, index, pool, invocations, ti);
 
       GcByteArray* name = cast<GcByteArray>(t, singletonObject(t, pool, ni));
       GcByteArray* type = cast<GcByteArray>(t, singletonObject(t, pool, ti));
@@ -984,8 +986,8 @@ unsigned parsePoolEntry(Thread* t,
       unsigned ci = s.read2() - 1;
       unsigned nti = s.read2() - 1;
 
-      parsePoolEntry(t, s, index, pool, ci);
-      parsePoolEntry(t, s, index, pool, nti);
+      parsePoolEntry(t, s, index, pool, invocations, ci);
+      parsePoolEntry(t, s, index, pool, invocations, nti);
 
       GcByteArray* className
           = cast<GcReference>(t, singletonObject(t, pool, ci))->name();
@@ -1015,7 +1017,7 @@ unsigned parsePoolEntry(Thread* t,
       unsigned kind = s.read1();
       unsigned ri = s.read2() - 1;
 
-      parsePoolEntry(t, s, index, pool, ri);
+      parsePoolEntry(t, s, index, pool, invocations, ri);
 
       GcReference* value = cast<GcReference>(t, singletonObject(t, pool, ri));
 
@@ -1040,7 +1042,7 @@ unsigned parsePoolEntry(Thread* t,
     if (singletonObject(t, pool, i) == 0) {
       unsigned ni = s.read2() - 1;
 
-      parsePoolEntry(t, s, index, pool, ni);
+      parsePoolEntry(t, s, index, pool, invocations, ni);
 
       pool->setBodyElement(
           t, i, reinterpret_cast<uintptr_t>(singletonObject(t, pool, ni)));
@@ -1052,7 +1054,7 @@ unsigned parsePoolEntry(Thread* t,
       unsigned bootstrap = s.read2();
       unsigned nti = s.read2() - 1;
 
-      parsePoolEntry(t, s, index, pool, nti);
+      parsePoolEntry(t, s, index, pool, invocations, nti);
 
       GcPair* nameAndType = cast<GcPair>(t, singletonObject(t, pool, nti));
 
@@ -1086,9 +1088,12 @@ unsigned parsePoolEntry(Thread* t,
                        0);
 
       object value = reinterpret_cast<object>(
-          makeInvocation(t, bootstrap, -1, 0, pool, template_, 0));
+          makeInvocation(t, bootstrap, -1, 0, pool, template_, 0, 0));
+      PROTECT(t, value);
 
       pool->setBodyElement(t, i, reinterpret_cast<uintptr_t>(value));
+
+      listAppend(t, invocations, value);
     }
     return 1;
 
@@ -1097,8 +1102,10 @@ unsigned parsePoolEntry(Thread* t,
   }
 }
 
-GcSingleton* parsePool(Thread* t, Stream& s)
+GcSingleton* parsePool(Thread* t, Stream& s, GcList* invocations)
 {
+  PROTECT(t, invocations);
+
   unsigned count = s.read2() - 1;
   GcSingleton* pool = makeSingletonOfSize(t, count + poolMaskSize(count));
   PROTECT(t, pool);
@@ -1184,7 +1191,7 @@ GcSingleton* parsePool(Thread* t, Stream& s)
     unsigned end = s.position();
 
     for (unsigned i = 0; i < count;) {
-      i += parsePoolEntry(t, s, index, pool, i);
+      i += parsePoolEntry(t, s, index, pool, invocations, i);
     }
 
     s.setPosition(end);
@@ -1220,7 +1227,7 @@ GcClassAddendum* getClassAddendum(Thread* t, GcClass* class_, GcSingleton* pool)
   if (addendum == 0) {
     PROTECT(t, class_);
 
-    addendum = makeClassAddendum(t, pool, 0, 0, 0, 0, -1, 0, 0, 0, 0);
+    addendum = makeClassAddendum(t, pool, 0, 0, 0, 0, -1, 0, 0);
     setField(t, class_, ClassAddendum, addendum);
   }
   return addendum;
@@ -2753,10 +2760,12 @@ void parseMethodTable(Thread* t, Stream& s, GcClass* class_, GcSingleton* pool)
 void parseAttributeTable(Thread* t,
                          Stream& s,
                          GcClass* class_,
-                         GcSingleton* pool)
+                         GcSingleton* pool,
+                         GcList* invocations)
 {
   PROTECT(t, class_);
   PROTECT(t, pool);
+  PROTECT(t, invocations);
 
   unsigned attributeCount = s.read2();
   for (unsigned j = 0; j < attributeCount; ++j) {
@@ -2814,7 +2823,7 @@ void parseAttributeTable(Thread* t,
     } else if (vm::strcmp(reinterpret_cast<const int8_t*>("BootstrapMethods"),
                           name->body().begin()) == 0) {
       unsigned count = s.read2();
-      GcArray* array = makeArray(t, count);
+      GcArray* array = makeArray(t, count * 2);
       PROTECT(t, array);
 
       for (unsigned i = 0; i < count; ++i) {
@@ -2828,8 +2837,10 @@ void parseAttributeTable(Thread* t,
         array->setBodyElement(t, i, element);
       }
 
-      GcClassAddendum* addendum = getClassAddendum(t, class_, pool);
-      addendum->setBootstrapMethodTable(t, array);
+      for (GcPair* p = cast<GcPair>(t, invocations->front()); p;
+           p = cast<GcPair>(t, p->second())) {
+        cast<GcInvocation>(t, p->first())->setBootstrapMethodTable(t, array);
+      }
     } else if (vm::strcmp(reinterpret_cast<const int8_t*>("EnclosingMethod"),
                           name->body().begin()) == 0) {
       int16_t enclosingClass = s.read2();
@@ -4757,7 +4768,10 @@ GcClass* parseClass(Thread* t,
     fprintf(stderr, "read class (minor %d major %d)\n", minorVer, majorVer);
   }
 
-  GcSingleton* pool = parsePool(t, s);
+  GcList* invocations = makeList(t, 0, 0, 0);
+  PROTECT(t, invocations);
+
+  GcSingleton* pool = parsePool(t, s, invocations);
   PROTECT(t, pool);
 
   unsigned flags = s.read2();
@@ -4812,7 +4826,7 @@ GcClass* parseClass(Thread* t,
 
   parseMethodTable(t, s, class_, pool);
 
-  parseAttributeTable(t, s, class_, pool);
+  parseAttributeTable(t, s, class_, pool, invocations);
 
   GcArray* vtable = cast<GcArray>(t, class_->virtualTable());
   unsigned vtableLength = (vtable ? vtable->length() : 0);
@@ -6080,9 +6094,8 @@ GcCallSite* resolveDynamic(Thread* t, GcInvocation* invocation)
 
   // First element points to the bootstrap method. The rest are static data passed to the BSM.
   GcCharArray* bootstrapArray = cast<GcCharArray>(
-      t,
-      cast<GcArray>(t, c->addendum()->bootstrapMethodTable())
-          ->body()[invocation->bootstrap()]);
+      t, cast<GcArray>(t, invocation->bootstrapMethodTable())
+             ->body()[invocation->bootstrap()]);
 
   PROTECT(t, bootstrapArray);
 
