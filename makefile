@@ -3,9 +3,12 @@ MAKEFLAGS = -s
 name = avian
 version := $(shell grep version gradle.properties | cut -d'=' -f2)
 
-java-version := $(shell "$(JAVA_HOME)/bin/java" -version 2>&1 \
-	| grep 'version "1' \
-	| sed 's/.*version "1.\([^.]*\).*/\1/')
+get-java-version = $(shell "$1" -version 2>&1 \
+		| grep -E 'version "1|version "9' \
+		| sed -e 's/.*version "1.\([^.]*\).*/\1/' \
+					-e 's/.*version "9.*/9/')
+
+java-version := $(call get-java-version,$(JAVA_HOME)/bin/java)
 
 build-arch := $(shell uname -m \
 	| sed 's/^i.86$$/i386/' \
@@ -171,9 +174,7 @@ library-path = $(library-path-variable)=$(build)
 
 
 ifneq ($(openjdk),)
-	openjdk-version := $(shell $(openjdk)/bin/java -version 2>&1 \
-		| grep 'version "1' \
-		| sed 's/.*version "1.\([^.]*\).*/\1/')
+	openjdk-version := $(call get-java-version,$(openjdk)/bin/java)
 
 	openjdk-arch = $(arch)
 	ifeq ($(arch),x86_64)
