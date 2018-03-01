@@ -154,7 +154,7 @@ public class LambdaMetafactory {
     throws IOException
   {
     if (to.type().isPrimitive()) {
-      if (! from.type().isPrimitive()) {
+      if (! (from.type().isPrimitive() || "V".equals(to.spec()))) {
         write1(out, invokevirtual);
 
         try {

@@ -33,6 +33,10 @@ public class InvokeDynamic {
     void accept(T obj);
   }
 
+  private interface BiConsumer<T, U> {
+    void accept(T t, U u);
+  }
+
   private interface Function<T, R> {
     R apply(T obj);
   }
@@ -139,6 +143,12 @@ public class InvokeDynamic {
 
     { Consumer<String> c = System.out::println;
       c.accept("invoke virtual");
+    }
+
+    { BiConsumer<StringBuilder, String> f = StringBuilder::append;
+      StringBuilder sb = new StringBuilder();
+      f.accept(sb, "yay");
+      expect(sb.toString().equals("yay"));
     }
 
     { Function<CharSequence, String> f = CharSequence::toString;
