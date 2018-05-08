@@ -308,7 +308,7 @@ _Stand-alone build:_
         openjdk-src=$(pwd)/openjdk-7-7~b147-2.0/build/openjdk/jdk/src \
         test
 
-####Mac OS X:
+#### Mac OS X:
 _Prerequisite:_ Build OpenJDK 7 according to [this site](https://wikis.oracle.com/display/OpenJDK/Mac+OS+X+Port).
 
 _Conventional build:_
@@ -320,7 +320,7 @@ _Stand-alone build:_
     $ make openjdk=$(pwd)/../jdk7u-dev/build/macosx-amd64/j2sdk-image \
         openjdk-src=$(pwd)/../p/jdk7u-dev/jdk/src test
 
-####Windows (Cygwin):
+#### Windows (Cygwin):
 _Prerequisite:_ Build OpenJDK 7 according to [this site](http://weblogs.java.net/blog/simonis/archive/2011/10/28/yaojowbi-yet-another-openjdk-windows-build-instruction).  Alternatively, use https://github.com/alexkasko/openjdk-unofficial-builds.
 
 _Conventional build:_
