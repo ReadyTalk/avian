@@ -11,6 +11,7 @@ flags=${1}; shift
 tests=${@}
 
 log=log.txt
+log_tmp=log_tmp.txt
 
 if [ -n "${ld_path}" ]; then
   export ${ld_path}
@@ -19,10 +20,11 @@ fi
 echo -n "" >${log}
 
 printf "%20s------- Unit tests -------\n" ""
-${unit_tester} 2>>${log}
+${unit_tester} 2>${log_tmp}
 if [ "${?}" != "0" ]; then
   trouble=1
   echo "unit tests failed!"
+  cat ${log_tmp} >> ${log}
 fi
 
 echo
@@ -33,11 +35,11 @@ for test in ${tests}; do
 
   case ${mode} in
     debug|debug-fast|fast|small )
-      ${vm} ${flags} ${test} >>${log} 2>&1;;
+      ${vm} ${flags} ${test} >${log_tmp} 2>&1;;
 
     stress* )
       ${vg} ${vm} ${flags} ${test} \
-        >>${log} 2>&1;;
+        >${log_tmp} 2>&1;;
 
     * )
       echo "unknown mode: ${mode}" >&2
@@ -48,13 +50,16 @@ for test in ${tests}; do
     echo "success"
   else
     echo "fail"
+    cat ${log_tmp} >> ${log}
     trouble=1
   fi
 done
 
 echo
 
+rm ${log_tmp}
+
 if [ -n "${trouble}" ]; then
-  printf "see ${log} for output\n"
+  printf "see `pwd`/${log} for output from failed tests\n"
   exit -1
 fi
