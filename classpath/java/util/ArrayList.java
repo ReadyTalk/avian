@@ -201,6 +201,7 @@ public class ArrayList<T> extends AbstractList<T> implements java.io.Serializabl
   {
     in.defaultReadObject();
     int capacity = in.readInt();
+    array = null;
     grow(capacity);
     for (int i = 0; i < size; i++) {
       array[i] = in.readObject();
