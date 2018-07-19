@@ -1,6 +1,8 @@
 Avian - A lightweight Java Virtual Machine (JVM)
 ================================================
 
+**PLEASE NOTE: This project is no longer being developed, maintained, or supported.  Feel free to use and/or fork it, but any issues filed here will probably be ignored.**
+
 [![Build Status](https://travis-ci.org/ReadyTalk/avian.png?branch=master)](https://travis-ci.org/ReadyTalk/avian)
 
 Quick Start
@@ -38,14 +40,7 @@ Introduction
 
 Avian is a lightweight virtual machine and class library designed to
 provide a useful subset of Java's features, suitable for building
-self-contained applications.  More information is available at the
-project [web site](http://readytalk.github.io/avian).
-
-If you have any trouble building, running, or embedding Avian, please
-post a message to our [discussion group](http://groups.google.com/group/avian).
-
-That's also the place for any other questions, comments, or
-suggestions you might have.
+self-contained applications.
 
 
 Supported Platforms
