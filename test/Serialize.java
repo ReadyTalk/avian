@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Properties;
 
 public class Serialize implements Serializable {
@@ -227,5 +228,23 @@ public class Serialize implements Serializable {
     in2.close();
     expectEqual(1, map.size());
     expectEqual("value", (String)map.get("key"));
+
+    out.reset();
+    out2 = new ObjectOutputStream(out);
+    ArrayList<String> list = new ArrayList<String>();
+    list.add("Foo");
+    list.add("Foo".substring(1));
+    list.add("Bar");
+    for (int i = 1; i < 20; i++)
+        list.add("num"+i);
+    out2.writeObject(list);
+    out2.close();
+    array = out.toByteArray();
+    in = new ByteArrayInputStream(array);
+    in2 = new ObjectInputStream(in);
+    ArrayList<String> listCopy = (ArrayList<String>)in2.readObject();
+    expectEqual(list.size(), listCopy.size());
+    for (int i = 0; i < list.size(); i++)
+        expectEqual(list.get(i), listCopy.get(i));
   }
 }
