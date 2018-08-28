@@ -15,7 +15,6 @@ import java.util.Map.Entry;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Collections;
 
 public class Data {
   public static int nextPowerOfTwo(int n) {
@@ -28,10 +27,10 @@ public class Data {
     return a == null ? b == null : a.equals(b);
   }
 
-  public static <T> T[] toArray(Collection collection, T[] array) {
+  public static <T> T[] toArray(Collection<?> collection, T[] array) {
     Class c = array.getClass().getComponentType();
-
-    if (array.length < collection.size()) {
+    int Csize = collection.size();
+    if (array.length < Csize) {
       array = (T[]) java.lang.reflect.Array.newInstance(c, collection.size());
     }
 
@@ -39,6 +38,9 @@ public class Data {
     for (Object o: collection) {
       if (c.isInstance(o)) {
         array[i++] = (T) o;
+        if(Csize <= i) {
+          break;
+        }
       } else {
         throw new ArrayStoreException();
       }

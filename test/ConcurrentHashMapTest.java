@@ -1,5 +1,7 @@
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,6 +13,31 @@ public class ConcurrentHashMapTest {
 
   private static void expect(boolean v) {
     if (! v) throw new RuntimeException();
+  }
+
+  private static void toArrayConcurrentMod() {
+    final AtomicBoolean run = new AtomicBoolean(true);
+    final Random RND = new Random();
+    final ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+    Thread t = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        while(run.get()) {
+          map.put(RND.nextInt(), RND.nextInt());
+          while(map.size() > 500) {
+            for(Integer i: map.keySet()) {
+              map.remove(i);
+              break;
+            }
+          }
+        }
+      }});
+    t.setDaemon(true);
+    t.start();
+    for(int i=0; i<1000; i++) {
+      map.values().toArray();
+    }
+    run.set(false);
   }
 
   public static void main(String[] args) throws Throwable {
@@ -103,6 +130,8 @@ public class ConcurrentHashMapTest {
         map.notifyAll();
       }
     }
+
+    toArrayConcurrentMod();
   }
 
   private static void populateCommon(ConcurrentMap<Integer, Object> map) {
