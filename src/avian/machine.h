@@ -129,6 +129,7 @@ namespace vm {
 
 const bool Verbose = false;
 const bool DebugRun = false;
+const bool DebugCalls = false;
 const bool DebugStack = false;
 const bool DebugMonitors = false;
 const bool DebugReferences = false;
