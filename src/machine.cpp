@@ -1693,7 +1693,7 @@ void disassembleCode(const char* prefix, uint8_t* code, unsigned length)
     case f2l:
       fprintf(stderr, "f2l\n");
       break;
-    case fadd:
+	case ::vm::fadd:
       fprintf(stderr, "fadd\n");
       break;
     case faload:
@@ -1717,10 +1717,10 @@ void disassembleCode(const char* prefix, uint8_t* code, unsigned length)
     case fconst_2:
       fprintf(stderr, "fconst_2\n");
       break;
-    case fdiv:
+	case ::vm::fdiv:
       fprintf(stderr, "fdiv\n");
       break;
-    case fmul:
+	case ::vm::fmul:
       fprintf(stderr, "fmul\n");
       break;
     case fneg:
@@ -1729,7 +1729,7 @@ void disassembleCode(const char* prefix, uint8_t* code, unsigned length)
     case frem:
       fprintf(stderr, "frem\n");
       break;
-    case fsub:
+	case ::vm::fsub:
       fprintf(stderr, "fsub\n");
       break;
 

@@ -3976,16 +3976,16 @@ lir::TernaryOperation toCompilerBinaryOp(MyThread* t, unsigned instruction)
   case iushr:
   case lushr:
     return lir::UnsignedShiftRight;
-  case fadd:
+  case ::vm::fadd:
   case dadd:
     return lir::FloatAdd;
-  case fsub:
+  case ::vm::fsub:
   case dsub:
     return lir::FloatSubtract;
-  case fmul:
+  case ::vm::fmul:
   case dmul:
     return lir::FloatMultiply;
-  case fdiv:
+  case ::vm::fdiv:
   case ddiv:
     return lir::FloatDivide;
   case frem:
@@ -4573,10 +4573,10 @@ loop:
                        c->f2i(ir::Type::i8(), frame->pop(ir::Type::f4())));
     } break;
 
-    case fadd:
-    case fsub:
-    case fmul:
-    case fdiv:
+    case ::vm::fadd:
+    case ::vm::fsub:
+    case ::vm::fmul:
+    case ::vm::fdiv:
     case frem: {
       ir::Value* a = frame->pop(ir::Type::f4());
       ir::Value* b = frame->pop(ir::Type::f4());
