@@ -1,8 +1,8 @@
-FROM debian:jessie
+FROM debian:stable
 MAINTAINER Joshua Warner, joshuawarner32@gmail.com
 
-RUN echo 'deb http://http.debian.net/debian jessie-backports main' >> /etc/apt/sources.list && \
-    echo 'deb-src http://http.debian.net/debian jessie-backports main' >> /etc/apt/sources.list && \
+RUN sed -i 's/main/main contrib non-free/' /etc/apt/sources.list && \
+    echo 'deb-src http://deb.debian.org/debian stable main contrib non-free' >> /etc/apt/sources.list && \
     dpkg --add-architecture i386 && \
     apt-get update && \
     mkdir /var/src/
@@ -10,9 +10,9 @@ RUN echo 'deb http://http.debian.net/debian jessie-backports main' >> /etc/apt/s
 # Install base dependencies and build tools, general debugging tools
 RUN apt-get install -y \
         build-essential \
-        g++-4.9 \
+        g++ \
         zlib1g-dev \
-        openjdk-8-jdk \
+        openjdk-11-jdk \
         locales \
         --no-install-recommends && \
     apt-get clean all
@@ -61,13 +61,13 @@ RUN apt-get install -y \
     libgconf2-dev && \
     mkdir /var/src/openjdk/ && \
     cd /var/src/openjdk/ && \
-    apt-get source openjdk-8 && \
+    apt-get source openjdk-11 && \
     apt-get clean all && \
     find /var/src/openjdk && \
     rm /var/src/openjdk/*.gz /var/src/openjdk/*.dsc && \
     cd /var/src/openjdk/ && \
     tar -xf /var/src/openjdk/openjdk*/jdk.tar.xz && \
-    mv /var/src/openjdk/jdk-*/src /var/src/openjdk-src && \
+    test -d /var/src/openjdk/jdk-*/src && mv /var/src/openjdk/jdk-*/src /var/src/openjdk-src || \
     rm -rf /var/src/openjdk && \
     apt-get clean all
 
