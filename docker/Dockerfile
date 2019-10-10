@@ -1,5 +1,5 @@
 FROM debian:stable
-MAINTAINER Joshua Warner, joshuawarner32@gmail.com
+MAINTAINER StEvUgnIn, stevugnin@outlook.com
 
 RUN sed -i 's/main/main contrib non-free/' /etc/apt/sources.list && \
     echo 'deb-src http://deb.debian.org/debian stable main contrib non-free' >> /etc/apt/sources.list && \
