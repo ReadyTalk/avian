@@ -1,7 +1,7 @@
 Avian - A lightweight Java Virtual Machine (JVM)
 ================================================
 
-**PLEASE NOTE: This project is not currently being developed, maintained, or supported.  Feel free to use and/or fork it, but any issues filed here will probably be ignored.**
+**PLEASE NOTE: The original project is not currently being developed, maintained, or supported.  Feel free to consider using, contributing and testing [GraalVM](https://www.graalvm.org/) which includes support for non JVM languages as Python, Ruby and also C/C++ and LLVM.**
 
 [![Build Status](https://travis-ci.org/ReadyTalk/avian.png?branch=master)](https://travis-ci.org/ReadyTalk/avian)
 
