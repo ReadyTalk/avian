@@ -104,7 +104,7 @@ void arrayCopy(Thread* t,
             throwNew(t, GcIndexOutOfBoundsException::Type);
           }
         } else if (LIKELY(length < 0)) {
-          throwNew(t, GcNegativeArraySizeException::Type, "%d", length);
+          throwNew(t, GcIndexOutOfBoundsException::Type, "%d", length);
           return;
         } else {
           return;
