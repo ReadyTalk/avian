@@ -81,8 +81,8 @@ void arrayCopy(Thread* t,
         intptr_t sl = fieldAtOffset<uintptr_t>(src, BytesPerWord);
         intptr_t dl = fieldAtOffset<uintptr_t>(dst, BytesPerWord);
         if (LIKELY(length > 0)) {
-          if (LIKELY(srcOffset >= 0 and srcOffset + length <= sl
-                     and dstOffset >= 0 and dstOffset + length <= dl)) {
+          if (LIKELY(srcOffset >= 0 and srcOffset + length > srcOffset and srcOffset + length <= sl
+                     and dstOffset >= 0 and dstOffset + length > dstOffset and dstOffset + length <= dl)) {
             uint8_t* sbody = &fieldAtOffset<uint8_t>(src, ArrayBody);
             uint8_t* dbody = &fieldAtOffset<uint8_t>(dst, ArrayBody);
             if (src == dst) {
@@ -103,6 +103,9 @@ void arrayCopy(Thread* t,
           } else {
             throwNew(t, GcIndexOutOfBoundsException::Type);
           }
+        } else if (LIKELY(length < 0)) {
+          throwNew(t, GcNegativeArraySizeException::Type, "%d", length);
+          return;
         } else {
           return;
         }
