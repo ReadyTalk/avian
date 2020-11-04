@@ -140,7 +140,7 @@ int printInstruction(uint8_t* code, unsigned& ip, const char* prefix)
     return fprintf(stderr, "f2i");
   case f2l:
     return fprintf(stderr, "f2l");
-  case fadd:
+  case ::vm::fadd:
     return fprintf(stderr, "fadd");
   case faload:
     return fprintf(stderr, "faload");
@@ -156,15 +156,15 @@ int printInstruction(uint8_t* code, unsigned& ip, const char* prefix)
     return fprintf(stderr, "fconst_1");
   case fconst_2:
     return fprintf(stderr, "fconst_2");
-  case fdiv:
+  case ::vm::fdiv:
     return fprintf(stderr, "fdiv");
-  case fmul:
+  case ::vm::fmul:
     return fprintf(stderr, "fmul");
   case fneg:
     return fprintf(stderr, "fneg");
   case frem:
     return fprintf(stderr, "frem");
-  case fsub:
+  case ::vm::fsub:
     return fprintf(stderr, "fsub");
 
   case getfield:
