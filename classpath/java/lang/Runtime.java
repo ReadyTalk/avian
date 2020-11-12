@@ -120,7 +120,7 @@ public class Runtime {
 
   private static native int waitFor(long pid, long tid);
 
-  private static native void kill(long pid);
+  private static native void kill(long pid, int in, int out, int err);
 
   public native void gc();
 
@@ -148,10 +148,17 @@ public class Runtime {
       this.err = err;
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+      destroy();
+      super.finalize();
+    }
+
     public void destroy() {
-			if (pid != 0) {
-      	kill(pid);
-			}
+      if (pid != 0) {
+        kill(pid, in, out, err);
+        pid = 0;
+      }
     }
 
     public InputStream getInputStream() {

@@ -495,10 +495,13 @@ extern "C" JNIEXPORT jint JNICALL
 }
 
 extern "C" JNIEXPORT void JNICALL
-    Java_java_lang_Runtime_kill(JNIEnv* e UNUSED, jclass, jlong pid)
+    Java_java_lang_Runtime_kill(JNIEnv* e UNUSED, jclass, jlong pid, jint in, jint out, jint err)
 {
 #if !defined(WINAPI_FAMILY) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
   TerminateProcess(reinterpret_cast<HANDLE>(pid), 1);
+  CloseHandle(reinterpret_cast<HANDLE>(in));
+  CloseHandle(reinterpret_cast<HANDLE>(out));
+  CloseHandle(reinterpret_cast<HANDLE>(err));
 #else
   throwNew(e, "java/io/Exception", strdup("Not supported on WinRT/WinPhone8"));
 #endif
@@ -798,9 +801,12 @@ extern "C" JNIEXPORT jint JNICALL
 }
 
 extern "C" JNIEXPORT void JNICALL
-    Java_java_lang_Runtime_kill(JNIEnv*, jclass, jlong pid)
+    Java_java_lang_Runtime_kill(JNIEnv*, jclass, jlong pid, jint in, jint out, jint err)
 {
   kill((pid_t)pid, SIGTERM);
+  close(in);
+  close(out);
+  close(err);
 }
 
 Locale getLocale()
