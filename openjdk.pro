@@ -259,6 +259,7 @@
 # loaded via reflection from DefaultFileSystemProvider:
 -keep class sun.nio.fs.LinuxFileSystemProvider
 -keep class sun.nio.fs.BsdFileSystemProvider
+-keep class sun.nio.fs.MacOSXFileSystemProvider
 
 # loaded via JNI in UnixNativeDispatcher.c:
 -keep class sun.nio.fs.UnixFileAttributes {
